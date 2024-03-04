@@ -74,6 +74,7 @@ from homeassistant.const import (
     STATE_OPEN,
     STATE_OPENING,
     STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
     STATE_UNLOCKED,
     UnitOfEnergy,
     UnitOfTemperature,
@@ -103,11 +104,7 @@ async def setup_prometheus_client(
     namespace: str,
 ):
     """Initialize an hass_client with Prometheus component."""
-    # Reset registry
-    prometheus_client.REGISTRY = prometheus_client.CollectorRegistry(auto_describe=True)
-    prometheus_client.ProcessCollector(registry=prometheus_client.REGISTRY)
-    prometheus_client.PlatformCollector(registry=prometheus_client.REGISTRY)
-    prometheus_client.GCCollector(registry=prometheus_client.REGISTRY)
+    reset_prometheus_registry()
 
     config = {}
     if namespace is not None:
@@ -1165,13 +1162,15 @@ async def test_disabling_entity(
 
 
 @pytest.mark.parametrize("namespace", [""])
+@pytest.mark.parametrize("unavailable_state", [STATE_UNAVAILABLE, STATE_UNKNOWN])
 async def test_entity_becomes_unavailable_with_export(
     hass: HomeAssistant,
     entity_registry: er.EntityRegistry,
     client: ClientSessionGenerator,
     sensor_entities: dict[str, er.RegistryEntry],
+    unavailable_state: str,
 ) -> None:
-    """Test an entity that becomes unavailable is still exported."""
+    """Test an entity that becomes unavailable/unknown is still exported."""
     data = {**sensor_entities}
 
     await hass.async_block_till_done()
@@ -1215,7 +1214,7 @@ async def test_entity_becomes_unavailable_with_export(
 
     # Make sensor_1 unavailable.
     set_state_with_entry(
-        hass, data["sensor_1"], STATE_UNAVAILABLE, data["sensor_1_attributes"]
+        hass, data["sensor_1"], unavailable_state, data["sensor_1_attributes"]
     )
 
     await hass.async_block_till_done()
@@ -1275,6 +1274,125 @@ async def test_entity_becomes_unavailable_with_export(
         'state_change_total{domain="sensor",'
         'entity="sensor.outside_temperature",'
         'friendly_name="Outside Temperature"} 3.0' in body
+    )
+
+    assert (
+        'entity_available{domain="sensor",'
+        'entity="sensor.outside_temperature",'
+        'friendly_name="Outside Temperature"} 1.0' in body
+    )
+
+
+@pytest.mark.parametrize("unavailable_state", [STATE_UNAVAILABLE, STATE_UNKNOWN])
+async def test_entity_becomes_unavailable_without_export(
+    hass: HomeAssistant,
+    hass_client: ClientSessionGenerator,
+    entity_registry: er.EntityRegistry,
+    sensor_entities: dict[str, er.RegistryEntry],
+    unavailable_state: str,
+) -> None:
+    """Test an entity that becomes unavailable/unknown is no longer exported."""
+    reset_prometheus_registry()
+    config = {
+        prometheus.CONF_PROM_NAMESPACE: "",
+        prometheus.CONF_EXPORT_UNAVAILABLE_METRICS: False,
+    }
+    assert await async_setup_component(
+        hass, prometheus.DOMAIN, {prometheus.DOMAIN: config}
+    )
+    await hass.async_block_till_done()
+    client = await hass_client()
+
+    data = {**sensor_entities}
+
+    await hass.async_block_till_done()
+    body = await generate_latest_metrics(client)
+
+    assert (
+        'sensor_temperature_celsius{domain="sensor",'
+        'entity="sensor.outside_temperature",'
+        'friendly_name="Outside Temperature"} 15.6' in body
+    )
+
+    assert (
+        'state_change_total{domain="sensor",'
+        'entity="sensor.outside_temperature",'
+        'friendly_name="Outside Temperature"} 1.0' in body
+    )
+
+    assert (
+        'entity_available{domain="sensor",'
+        'entity="sensor.outside_temperature",'
+        'friendly_name="Outside Temperature"} 1.0' in body
+    )
+
+    assert (
+        'sensor_humidity_percent{domain="sensor",'
+        'entity="sensor.outside_humidity",'
+        'friendly_name="Outside Humidity"} 54.0' in body
+    )
+
+    assert (
+        'state_change_total{domain="sensor",'
+        'entity="sensor.outside_humidity",'
+        'friendly_name="Outside Humidity"} 1.0' in body
+    )
+
+    assert (
+        'entity_available{domain="sensor",'
+        'entity="sensor.outside_humidity",'
+        'friendly_name="Outside Humidity"} 1.0' in body
+    )
+
+    # Make sensor_1 unavailable/unknown.
+    set_state_with_entry(
+        hass, data["sensor_1"], unavailable_state, data["sensor_1_attributes"]
+    )
+
+    await hass.async_block_till_done()
+    body = await generate_latest_metrics(client)
+
+    # Check that metrics are no longer exported for an unavailable entity.
+    body_line = "\n".join(body)
+    assert 'entity="sensor.outside_temperature"' not in body_line
+    assert 'friendly_name="Outside Temperature"' not in body_line
+
+    # Verify that the other sensor is unchanged.
+    assert (
+        'sensor_humidity_percent{domain="sensor",'
+        'entity="sensor.outside_humidity",'
+        'friendly_name="Outside Humidity"} 54.0' in body
+    )
+
+    assert (
+        'state_change_total{domain="sensor",'
+        'entity="sensor.outside_humidity",'
+        'friendly_name="Outside Humidity"} 1.0' in body
+    )
+
+    assert (
+        'entity_available{domain="sensor",'
+        'entity="sensor.outside_humidity",'
+        'friendly_name="Outside Humidity"} 1.0' in body
+    )
+
+    # Bring sensor_1 back and check that it returned.
+    set_state_with_entry(hass, data["sensor_1"], 201.0, data["sensor_1_attributes"])
+
+    await hass.async_block_till_done()
+    body = await generate_latest_metrics(client)
+
+    assert (
+        'sensor_temperature_celsius{domain="sensor",'
+        'entity="sensor.outside_temperature",'
+        'friendly_name="Outside Temperature"} 201.0' in body
+    )
+
+    # state_change is reset in this configuration.
+    assert (
+        'state_change_total{domain="sensor",'
+        'entity="sensor.outside_temperature",'
+        'friendly_name="Outside Temperature"} 1.0' in body
     )
 
     assert (
@@ -2107,6 +2225,14 @@ def set_state_with_entry(
         new_state=state,
         attributes=attributes,
     )
+
+
+def reset_prometheus_registry() -> None:
+    """Reset the prometheus registry."""
+    prometheus_client.REGISTRY = prometheus_client.CollectorRegistry(auto_describe=True)
+    prometheus_client.ProcessCollector(registry=prometheus_client.REGISTRY)
+    prometheus_client.PlatformCollector(registry=prometheus_client.REGISTRY)
+    prometheus_client.GCCollector(registry=prometheus_client.REGISTRY)
 
 
 @pytest.fixture(name="mock_client")

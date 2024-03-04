@@ -94,6 +94,7 @@ CONF_COMPONENT_CONFIG = "component_config"
 CONF_COMPONENT_CONFIG_GLOB = "component_config_glob"
 CONF_COMPONENT_CONFIG_DOMAIN = "component_config_domain"
 CONF_DEFAULT_METRIC = "default_metric"
+CONF_EXPORT_UNAVAILABLE_METRICS = "export_unavailable_metrics"
 CONF_OVERRIDE_METRIC = "override_metric"
 COMPONENT_CONFIG_SCHEMA_ENTRY = vol.Schema(
     {vol.Optional(CONF_OVERRIDE_METRIC): cv.string}
@@ -109,6 +110,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_PROM_NAMESPACE, default=DEFAULT_NAMESPACE): cv.string,
                 vol.Optional(CONF_REQUIRES_AUTH, default=True): cv.boolean,
                 vol.Optional(CONF_DEFAULT_METRIC): cv.string,
+                vol.Optional(CONF_EXPORT_UNAVAILABLE_METRICS, default=True): cv.boolean,
                 vol.Optional(CONF_OVERRIDE_METRIC): cv.string,
                 vol.Optional(CONF_COMPONENT_CONFIG, default={}): vol.Schema(
                     {cv.entity_id: COMPONENT_CONFIG_SCHEMA_ENTRY}
@@ -136,6 +138,7 @@ def setup(hass: HomeAssistant, config: ConfigType) -> bool:
     climate_units = hass.config.units.temperature_unit
     override_metric: str | None = conf.get(CONF_OVERRIDE_METRIC)
     default_metric: str | None = conf.get(CONF_DEFAULT_METRIC)
+    export_unavailable_metrics: bool = conf[CONF_EXPORT_UNAVAILABLE_METRICS]
     component_config = EntityValues(
         conf[CONF_COMPONENT_CONFIG],
         conf[CONF_COMPONENT_CONFIG_DOMAIN],
@@ -149,6 +152,7 @@ def setup(hass: HomeAssistant, config: ConfigType) -> bool:
         component_config,
         override_metric,
         default_metric,
+        export_unavailable_metrics,
     )
 
     hass.bus.listen(EVENT_STATE_CHANGED, metrics.handle_state_changed_event)
@@ -175,11 +179,13 @@ class PrometheusMetrics:
         component_config: EntityValues,
         override_metric: str | None,
         default_metric: str | None,
+        export_unavailable_metrics: bool,
     ) -> None:
         """Initialize Prometheus Metrics."""
         self._component_config = component_config
         self._override_metric = override_metric
         self._default_metric = default_metric
+        self._export_unavailable_metrics = export_unavailable_metrics
         self._filter = entity_filter
         self._sensor_metric_handlers: list[
             Callable[[State, str | None], str | None]
@@ -222,6 +228,12 @@ class PrometheusMetrics:
         domain, _ = hacore.split_entity_id(entity_id)
 
         ignored_states = (STATE_UNAVAILABLE, STATE_UNKNOWN)
+
+        if state.state in ignored_states and not self._export_unavailable_metrics:
+            self._remove_labelsets(
+                state.entity_id, state.attributes.get(ATTR_FRIENDLY_NAME)
+            )
+            return
 
         handler = f"_handle_{domain}"
 
