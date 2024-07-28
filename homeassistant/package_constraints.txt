@@ -62,6 +62,7 @@ uv==0.4.9
 voluptuous-openapi==0.0.5
 voluptuous-serialize==2.6.0
 voluptuous==0.15.2
+webauthn==2.2.0
 yarl==1.11.1
 zeroconf==0.134.0
 
