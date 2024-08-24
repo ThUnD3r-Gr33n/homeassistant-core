@@ -6,6 +6,7 @@ from gotailwind import (
     TailwindDoorDisabledError,
     TailwindDoorLockedOutError,
     TailwindDoorOperationCommand,
+    TailwindDoorOperationError,
     TailwindError,
 )
 import pytest
@@ -69,6 +70,7 @@ async def test_cover_operations(
     mock_tailwind.operate.assert_called_with(
         door=ANY, operation=TailwindDoorOperationCommand.OPEN
     )
+    assert True
 
     await hass.services.async_call(
         COVER_DOMAIN,
@@ -181,3 +183,18 @@ async def test_cover_operations(
     )
     assert excinfo.value.translation_domain == DOMAIN
     assert excinfo.value.translation_key == "communication_error"
+
+    # Test door_operation_error
+    mock_tailwind.operate.side_effect = TailwindDoorOperationError(
+        "Door is already in the requested state"
+    )
+
+    # This call should not raise an exception
+    await hass.services.async_call(
+        COVER_DOMAIN,
+        SERVICE_OPEN_COVER,
+        {
+            ATTR_ENTITY_ID: "cover.door_1",
+        },
+        blocking=True,
+    )
