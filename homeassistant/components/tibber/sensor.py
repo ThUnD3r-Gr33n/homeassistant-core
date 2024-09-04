@@ -411,13 +411,6 @@ class TibberSensorElPrice(TibberSensor):
         ):
             return
 
-        # Price energy / tax
-        # current_price_info -> {'energy': 0.0737, 'tax': 0.1719, 'total': 0.2456, 'startsAt': '2024-08-06T09:00:00.000+02:00', 'level': 'NORMAL'}
-        await self._tibber_home.update_current_price_info()
-        res = self._tibber_home.current_price_info
-        self._attr_extra_state_attributes["price_energy"] = res.get("energy")
-        self._attr_extra_state_attributes["price_tax"] = res.get("tax")
-
         res = self._tibber_home.current_price_data()
         self._attr_native_value, price_level, self._last_updated, price_rank = res
         self._attr_extra_state_attributes["price_level"] = price_level
