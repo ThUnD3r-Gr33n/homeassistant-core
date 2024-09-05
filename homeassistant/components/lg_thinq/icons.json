@@ -29,26 +29,8 @@
       "error": {
         "default": "mdi:alert-circle-outline"
       },
-      "notification": {
-        "default": "mdi:message-badge-outline"
-      },
-      "pm1": {
-        "default": "mdi:molecule"
-      },
-      "pm2": {
-        "default": "mdi:molecule"
-      },
-      "pm10": {
-        "default": "mdi:molecule"
-      },
       "odor": {
         "default": "mdi:scent"
-      },
-      "humidity": {
-        "default": "mdi:water-percent"
-      },
-      "current_humidity": {
-        "default": "mdi:water-percent"
       },
       "current_temperature": {
         "default": "mdi:thermometer"
@@ -74,18 +56,6 @@
       "wind_volume_for_location": {
         "default": "mdi:wind-power-outline"
       },
-      "brightness": {
-        "default": "mdi:tune-vertical-variant"
-      },
-      "brightness_for_location": {
-        "default": "mdi:tune-vertical-variant"
-      },
-      "duration": {
-        "default": "mdi:tune-vertical-variant"
-      },
-      "duration_for_location": {
-        "default": "mdi:tune-vertical-variant"
-      },
       "day_target_temperature": {
         "default": "mdi:thermometer"
       },
@@ -110,19 +80,10 @@
       "current_state_for_location": {
         "default": "mdi:list-status"
       },
-      "detergent_setting": {
-        "default": "mdi:tune-vertical-variant"
-      },
-      "detergent_setting_for_location": {
-        "default": "mdi:tune-vertical-variant"
-      },
       "door_state": {
         "default": "mdi:door"
       },
       "fresh_air_filter": {
-        "default": "mdi:air-filter"
-      },
-      "filter_lifetime": {
         "default": "mdi:air-filter"
       },
       "used_time": {
@@ -136,24 +97,6 @@
       },
       "personalization_mode": {
         "default": "mdi:dots-circle"
-      },
-      "current_dish_washing_course": {
-        "default": "mdi:format-list-checks"
-      },
-      "rinse_level": {
-        "default": "mdi:tune-vertical-variant"
-      },
-      "softening_level": {
-        "default": "mdi:tune-vertical-variant"
-      },
-      "machine_clean_reminder": {
-        "default": "mdi:tune-vertical-variant"
-      },
-      "signal_level": {
-        "default": "mdi:tune-vertical-variant"
-      },
-      "clean_light_reminder": {
-        "default": "mdi:tune-vertical-variant"
       },
       "cock_state": {
         "default": "mdi:air-filter"
@@ -175,120 +118,6 @@
       },
       "operation_mode": {
         "default": "mdi:power"
-      },
-      "elapsed_day_state": {
-        "default": "mdi:calendar-range-outline"
-      },
-      "elapsed_day_total": {
-        "default": "mdi:calendar-range-outline"
-      },
-      "recipe_name": {
-        "default": "mdi:information-box-outline"
-      },
-      "wort_info": {
-        "default": "mdi:information-box-outline"
-      },
-      "yeast_info": {
-        "default": "mdi:information-box-outline"
-      },
-      "hop_oil_info": {
-        "default": "mdi:information-box-outline"
-      },
-      "flavor_info": {
-        "default": "mdi:information-box-outline"
-      },
-      "beer_remain": {
-        "default": "mdi:glass-mug-variant"
-      },
-      "battery_level": {
-        "default": "mdi:battery-medium"
-      },
-      "battery_percent": {
-        "default": "mdi:battery-medium"
-      },
-      "relative_to_start": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "relative_to_start_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "relative_to_start_wm": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "relative_to_start_wm_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "relative_to_stop": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "relative_to_stop_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "relative_to_stop_wm": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "relative_to_stop_wm_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "sleep_timer_relative_to_stop": {
-        "default": "mdi:bed-clock"
-      },
-      "sleep_timer_relative_to_stop_for_location": {
-        "default": "mdi:bed-clock"
-      },
-      "absolute_to_start": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "absolute_to_start_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "absolute_to_stop": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "absolute_to_stop_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "remain": {
-        "default": "mdi:timer-sand"
-      },
-      "remain_for_location": {
-        "default": "mdi:timer-sand"
-      },
-      "running": {
-        "default": "mdi:timer-play-outline"
-      },
-      "running_for_location": {
-        "default": "mdi:timer-play-outline"
-      },
-      "total": {
-        "default": "mdi:timer-play-outline"
-      },
-      "total_for_location": {
-        "default": "mdi:timer-play-outline"
-      },
-      "target": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "target_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "light_start": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "light_start_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "light_end": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "light_end_for_location": {
-        "default": "mdi:clock-time-three-outline"
-      },
-      "power_level": {
-        "default": "mdi:radiator"
-      },
-      "power_level_for_location": {
-        "default": "mdi:radiator"
       }
     }
   }

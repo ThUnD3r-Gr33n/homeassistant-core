@@ -48,18 +48,6 @@
       "error": {
         "name": "Error"
       },
-      "notification": {
-        "name": "Notification"
-      },
-      "pm1": {
-        "name": "PM1.0"
-      },
-      "pm2": {
-        "name": "PM2.5"
-      },
-      "pm10": {
-        "name": "PM10"
-      },
       "odor": {
         "name": "Odor",
         "state": {
@@ -68,12 +56,6 @@
           "3": "Strong",
           "4": "Very strong"
         }
-      },
-      "humidity": {
-        "name": "Humidity"
-      },
-      "current_humidity": {
-        "name": "Current humidity"
       },
       "current_temperature": {
         "name": "Current temperature"
@@ -106,18 +88,6 @@
       "wind_volume_for_location": {
         "name": "{location} wind speed"
       },
-      "brightness": {
-        "name": "Lighting intensity"
-      },
-      "brightness_for_location": {
-        "name": "{location} lighting intensity"
-      },
-      "duration": {
-        "name": "Lighting duration"
-      },
-      "duration_for_location": {
-        "name": "{location} lighting duration"
-      },
       "day_target_temperature": {
         "name": "Day growth temperature"
       },
@@ -142,20 +112,11 @@
       "current_state_for_location": {
         "name": "{location} current status"
       },
-      "detergent_setting": {
-        "name": "Default detergent"
-      },
-      "detergent_setting_for_location": {
-        "name": "{location} default detergent"
-      },
       "door_state": {
         "name": "Door open"
       },
       "fresh_air_filter": {
         "name": "Fresh air filter"
-      },
-      "filter_lifetime": {
-        "name": "Filter remaining"
       },
       "used_time": {
         "name": "Water filter used"
@@ -168,24 +129,6 @@
       },
       "personalization_mode": {
         "name": "Personal mode"
-      },
-      "current_dish_washing_course": {
-        "name": "Current cycle"
-      },
-      "rinse_level": {
-        "name": "Rinse aid dispenser level"
-      },
-      "softening_level": {
-        "name": "Softening level"
-      },
-      "machine_clean_reminder": {
-        "name": "Machine clean reminder"
-      },
-      "signal_level": {
-        "name": "Chime sound"
-      },
-      "clean_light_reminder": {
-        "name": "Clean indicator light"
       },
       "cock_state": {
         "name": "UVnano"
@@ -207,120 +150,6 @@
       },
       "operation_mode": {
         "name": "Power"
-      },
-      "elapsed_day_state": {
-        "name": "Brewing period"
-      },
-      "elapsed_day_total": {
-        "name": "Brewing duration"
-      },
-      "recipe_name": {
-        "name": "Homebrew recipe"
-      },
-      "wort_info": {
-        "name": "Wort"
-      },
-      "yeast_info": {
-        "name": "Yeast"
-      },
-      "hop_oil_info": {
-        "name": "Hops"
-      },
-      "flavor_info": {
-        "name": "Flavor"
-      },
-      "beer_remain": {
-        "name": "Recipe progress"
-      },
-      "battery_level": {
-        "name": "Battery"
-      },
-      "battery_percent": {
-        "name": "Battery"
-      },
-      "relative_to_start": {
-        "name": "Schedule turn-on"
-      },
-      "relative_to_start_for_location": {
-        "name": "{location} schedule turn-on"
-      },
-      "relative_to_start_wm": {
-        "name": "Delay starts in"
-      },
-      "relative_to_start_wm_for_location": {
-        "name": "{location} delay starts in"
-      },
-      "relative_to_stop": {
-        "name": "Schedule turn-off"
-      },
-      "relative_to_stop_for_location": {
-        "name": "{location} schedule turn-off"
-      },
-      "relative_to_stop_wm": {
-        "name": "Delay ends in"
-      },
-      "relative_to_stop_wm_for_location": {
-        "name": "{location} delay ends in"
-      },
-      "sleep_timer_relative_to_stop": {
-        "name": "Sleep timer"
-      },
-      "sleep_timer_relative_to_stop_for_location": {
-        "name": "{location} sleep timer"
-      },
-      "absolute_to_start": {
-        "name": "Schedule turn-on"
-      },
-      "absolute_to_start_for_location": {
-        "name": "{location} schedule turn-on"
-      },
-      "absolute_to_stop": {
-        "name": "Schedule turn-off"
-      },
-      "absolute_to_stop_for_location": {
-        "name": "{location} schedule turn-off"
-      },
-      "remain": {
-        "name": "Remaining time"
-      },
-      "remain_for_location": {
-        "name": "{location} remaining time"
-      },
-      "running": {
-        "name": "Running time"
-      },
-      "running_for_location": {
-        "name": "{location} running time"
-      },
-      "total": {
-        "name": "Total time"
-      },
-      "total_for_location": {
-        "name": "{location} total time"
-      },
-      "target": {
-        "name": "Cook time"
-      },
-      "target_for_location": {
-        "name": "{location} cook time"
-      },
-      "light_start": {
-        "name": "Lights on time"
-      },
-      "light_start_for_location": {
-        "name": "{location} lights on time"
-      },
-      "light_end": {
-        "name": "Lights off time"
-      },
-      "light_end_for_location": {
-        "name": "{location} lights off time"
-      },
-      "power_level": {
-        "name": "Power level"
-      },
-      "power_level_for_location": {
-        "name": "{location} power level"
       }
     }
   }
