@@ -48,30 +48,11 @@
       "error": {
         "name": "Error"
       },
-      "odor": {
-        "name": "Odor",
-        "state": {
-          "1": "Weak",
-          "2": "Normal",
-          "3": "Strong",
-          "4": "Very strong"
-        }
-      },
       "current_temperature": {
         "name": "Current temperature"
       },
       "temperature": {
         "name": "Temperature"
-      },
-      "total_pollution": {
-        "name": "Overall air quality",
-        "state": {
-          "0": "Sensor power-off state",
-          "1": "Good",
-          "2": "Moderate",
-          "3": "Unhealthy",
-          "4": "Poor"
-        }
       },
       "monitoring_enabled": {
         "name": "Air quality sensor"
@@ -112,9 +93,6 @@
       "current_state_for_location": {
         "name": "{location} current status"
       },
-      "door_state": {
-        "name": "Door open"
-      },
       "fresh_air_filter": {
         "name": "Fresh air filter"
       },
@@ -147,9 +125,6 @@
       },
       "one_touch_filter": {
         "name": "Fresh air filter"
-      },
-      "operation_mode": {
-        "name": "Power"
       }
     }
   }
