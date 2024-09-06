@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
 from typing import Any
 
 import requests
 import rxv
+from rxv import RXV
 import voluptuous as vol
 
 from homeassistant.components.media_player import (
@@ -22,6 +22,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import (
@@ -31,7 +32,9 @@ from .const import (
     CURSOR_TYPE_RIGHT,
     CURSOR_TYPE_SELECT,
     CURSOR_TYPE_UP,
-    DISCOVER_TIMEOUT,
+    DISCOVERY_STORE,
+    DISCOVERY_STORE_KEY,
+    DISCOVERY_STORE_VERSION,
     DOMAIN,
     KNOWN_ZONES,
     SERVICE_ENABLE_OUTPUT,
@@ -51,6 +54,7 @@ CONF_SOURCE_IGNORE = "source_ignore"
 CONF_SOURCE_NAMES = "source_names"
 CONF_ZONE_IGNORE = "zone_ignore"
 CONF_ZONE_NAMES = "zone_names"
+
 
 CURSOR_TYPE_MAP = {
     CURSOR_TYPE_DOWN: rxv.RXV.menu_down.__name__,
@@ -95,7 +99,7 @@ class YamahaConfigInfo:
         self, config: ConfigType, discovery_info: DiscoveryInfoType | None
     ) -> None:
         """Initialize the Configuration Info for Yamaha Receiver."""
-        self.name = config.get(CONF_NAME)
+        self.name = config.get(CONF_NAME) or DEFAULT_NAME
         self.host = config.get(CONF_HOST)
         self.ctrl_url: str | None = f"http://{self.host}:80/YamahaRemoteControl/ctrl"
         self.source_ignore = config.get(CONF_SOURCE_IGNORE)
@@ -105,7 +109,7 @@ class YamahaConfigInfo:
         self.from_discovery = False
         _LOGGER.debug("Discovery Info: %s", discovery_info)
         if discovery_info is not None:
-            self.name = discovery_info.get("name")
+            self.name = discovery_info.get("name") or DEFAULT_NAME
             self.model = discovery_info.get("model_name")
             self.ctrl_url = discovery_info.get("control_url")
             self.desc_url = discovery_info.get("description_url")
@@ -113,8 +117,9 @@ class YamahaConfigInfo:
             self.from_discovery = True
 
 
-def _discovery(config_info):
+def _discovery(config_info, data) -> list[RXV]:
     """Discover list of zone controllers from configuration in the network."""
+    _LOGGER.debug("Discovery Config %s", vars(config_info))
     if config_info.from_discovery:
         _LOGGER.debug("Discovery Zones")
         zones = rxv.RXV(
@@ -126,34 +131,26 @@ def _discovery(config_info):
     elif config_info.host is None:
         _LOGGER.debug("Config No Host Supplied Zones")
         zones = []
-        for recv in rxv.find(DISCOVER_TIMEOUT):
+        for recv in rxv.find():
             zones.extend(recv.zone_controllers())
     else:
         _LOGGER.debug("Config Zones")
         zones = None
 
-        # Fix for upstream issues in rxv.find() with some hardware.
-        with contextlib.suppress(AttributeError, ValueError):
-            for recv in rxv.find(DISCOVER_TIMEOUT):
+        if data:
+            _LOGGER.debug("Discovery Store")
+            if config_info.ctrl_url in data:
                 _LOGGER.debug(
-                    "Found Serial %s %s %s",
-                    recv.serial_number,
-                    recv.ctrl_url,
-                    recv.zone,
+                    "Discovery store data matched with Serial %s %s %s",
+                    config_info.ctrl_url,
+                    config_info.name,
+                    data[config_info.ctrl_url]["serial_number"],
                 )
-                if recv.ctrl_url == config_info.ctrl_url:
-                    _LOGGER.debug(
-                        "Config Zones Matched Serial %s: %s",
-                        recv.ctrl_url,
-                        recv.serial_number,
-                    )
-                    zones = rxv.RXV(
-                        config_info.ctrl_url,
-                        friendly_name=config_info.name,
-                        serial_number=recv.serial_number,
-                        model_name=recv.model_name,
-                    ).zone_controllers()
-                    break
+                zones = rxv.RXV(
+                    config_info.ctrl_url,
+                    config_info.name,
+                    serial_number=data[config_info.ctrl_url]["serial_number"],
+                ).zone_controllers()
 
         if not zones:
             _LOGGER.debug("Config Zones Fallback")
@@ -179,8 +176,20 @@ async def async_setup_platform(
     # Get the Infos for configuration from config (YAML) or Discovery
     config_info = YamahaConfigInfo(config=config, discovery_info=discovery_info)
     # Async check if the Receivers are there in the network
+    store = Store[dict[str, Any]](hass, DISCOVERY_STORE_VERSION, DISCOVERY_STORE_KEY)
+    hass.data[DOMAIN][DISCOVERY_STORE] = store
+    data = await store.async_load()
+
+    # empty store on first run allow an SSDP to run.
+    if not data:
+        data = {}
+        await store.async_save(data)
+        raise PlatformNotReady(
+            "SSDP Discovery needs a chance to to run, this is normal and should only happen when first added."
+        )
+
     try:
-        zone_ctrls = await hass.async_add_executor_job(_discovery, config_info)
+        zone_ctrls = await hass.async_add_executor_job(_discovery, config_info, data)
     except requests.exceptions.ConnectionError as ex:
         raise PlatformNotReady(f"Issue while connecting to {config_info.name}") from ex
 
@@ -208,6 +217,7 @@ async def async_setup_platform(
                 "Ignoring duplicate zone: %s %s", config_info.name, zctrl.zone
             )
 
+    _LOGGER.debug("Add entities %s", entities)
     async_add_entities(entities)
 
     # Register Service 'select_scene'
@@ -229,12 +239,22 @@ async def async_setup_platform(
         {vol.Required(ATTR_CURSOR): vol.In(CURSOR_TYPE_MAP)},
         YamahaDeviceZone.menu_cursor.__name__,
     )
+    _LOGGER.debug("Platform setup complete")
 
 
 class YamahaDeviceZone(MediaPlayerEntity):
     """Representation of a Yamaha device zone."""
 
-    def __init__(self, name, zctrl, source_ignore, source_names, zone_names):
+    _reverse_mapping: dict[str, str]
+
+    def __init__(
+        self,
+        name: str,
+        zctrl: RXV,
+        source_ignore: list[str] | None,
+        source_names: dict[str, str] | None,
+        zone_names: dict[str, str] | None,
+    ) -> None:
         """Initialize the Yamaha Receiver."""
         self.zctrl = zctrl
         self._attr_is_volume_muted = False
@@ -243,7 +263,6 @@ class YamahaDeviceZone(MediaPlayerEntity):
         self._source_ignore = source_ignore or []
         self._source_names = source_names or {}
         self._zone_names = zone_names or {}
-        self._reverse_mapping = None
         self._playback_support = None
         self._is_playback_supported = False
         self._play_status = None
@@ -295,7 +314,7 @@ class YamahaDeviceZone(MediaPlayerEntity):
             self._attr_sound_mode = None
             self._attr_sound_mode_list = None
 
-    def build_source_list(self):
+    def build_source_list(self) -> None:
         """Build the source list."""
         self._reverse_mapping = {
             alias: source for source, alias in self._source_names.items()
@@ -308,7 +327,7 @@ class YamahaDeviceZone(MediaPlayerEntity):
         )
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the device."""
         name = self._name
         zone_name = self._zone_names.get(self._zone, self._zone)
@@ -318,7 +337,7 @@ class YamahaDeviceZone(MediaPlayerEntity):
         return name
 
     @property
-    def zone_id(self):
+    def zone_id(self) -> str:
         """Return a zone_id to ensure 1 media player per zone."""
         return f"{self.zctrl.ctrl_url}:{self._zone}"
 
@@ -415,15 +434,15 @@ class YamahaDeviceZone(MediaPlayerEntity):
         if media_type == "NET RADIO":
             self.zctrl.net_radio(media_id)
 
-    def enable_output(self, port, enabled):
+    def enable_output(self, port, enabled) -> None:
         """Enable or disable an output port.."""
         self.zctrl.enable_output(port, enabled)
 
-    def menu_cursor(self, cursor):
+    def menu_cursor(self, cursor) -> None:
         """Press a menu cursor button."""
         getattr(self.zctrl, CURSOR_TYPE_MAP[cursor])()
 
-    def set_scene(self, scene):
+    def set_scene(self, scene) -> None:
         """Set the current scene."""
         try:
             self.zctrl.scene = scene
