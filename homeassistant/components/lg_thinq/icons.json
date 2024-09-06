@@ -29,17 +29,11 @@
       "error": {
         "default": "mdi:alert-circle-outline"
       },
-      "odor": {
-        "default": "mdi:scent"
-      },
       "current_temperature": {
         "default": "mdi:thermometer"
       },
       "temperature": {
         "default": "mdi:thermometer"
-      },
-      "total_pollution": {
-        "default": "mdi:air-filter"
       },
       "monitoring_enabled": {
         "default": "mdi:monitor-eye"
@@ -80,9 +74,6 @@
       "current_state_for_location": {
         "default": "mdi:list-status"
       },
-      "door_state": {
-        "default": "mdi:door"
-      },
       "fresh_air_filter": {
         "default": "mdi:air-filter"
       },
@@ -115,9 +106,6 @@
       },
       "one_touch_filter": {
         "default": "mdi:air-filter"
-      },
-      "operation_mode": {
-        "default": "mdi:power"
       }
     }
   }

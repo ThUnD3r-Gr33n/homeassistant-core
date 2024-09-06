@@ -57,14 +57,6 @@ AIR_QUALITY_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
-    ThinQProperty.ODOR: SensorEntityDescription(
-        key=ThinQProperty.ODOR,
-        translation_key=ThinQProperty.ODOR,
-    ),
-    ThinQProperty.TOTAL_POLLUTION: SensorEntityDescription(
-        key=ThinQProperty.TOTAL_POLLUTION,
-        translation_key=ThinQProperty.TOTAL_POLLUTION,
-    ),
     ThinQProperty.MONITORING_ENABLED: SensorEntityDescription(
         key=ThinQProperty.MONITORING_ENABLED,
         translation_key=ThinQProperty.MONITORING_ENABLED,
@@ -96,16 +88,6 @@ JOB_MODE_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
     ThinQProperty.PERSONALIZATION_MODE: SensorEntityDescription(
         key=ThinQProperty.PERSONALIZATION_MODE,
         translation_key=ThinQProperty.PERSONALIZATION_MODE,
-    ),
-}
-OPERATION_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
-    ThinQProperty.HOOD_OPERATION_MODE: SensorEntityDescription(
-        key=ThinQProperty.HOOD_OPERATION_MODE,
-        translation_key=ThinQProperty.OPERATION_MODE,
-    ),
-    ThinQProperty.WATER_HEATER_OPERATION_MODE: SensorEntityDescription(
-        key=ThinQProperty.WATER_HEATER_OPERATION_MODE,
-        translation_key=ThinQProperty.OPERATION_MODE,
     ),
 }
 REFRIGERATION_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
@@ -185,17 +167,13 @@ DEVICE_TYPE_SENSOR_MAP: dict[DeviceType, tuple[SensorEntityDescription, ...]] = 
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM2],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM10],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.HUMIDITY],
-        AIR_QUALITY_SENSOR_DESC[ThinQProperty.ODOR],
-        AIR_QUALITY_SENSOR_DESC[ThinQProperty.TOTAL_POLLUTION],
     ),
     DeviceType.AIR_PURIFIER_FAN: (
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM1],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM2],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM10],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.HUMIDITY],
-        AIR_QUALITY_SENSOR_DESC[ThinQProperty.ODOR],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.TEMPERATURE],
-        AIR_QUALITY_SENSOR_DESC[ThinQProperty.TOTAL_POLLUTION],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.MONITORING_ENABLED],
     ),
     DeviceType.AIR_PURIFIER: (
@@ -203,8 +181,6 @@ DEVICE_TYPE_SENSOR_MAP: dict[DeviceType, tuple[SensorEntityDescription, ...]] = 
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM2],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM10],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.HUMIDITY],
-        AIR_QUALITY_SENSOR_DESC[ThinQProperty.ODOR],
-        AIR_QUALITY_SENSOR_DESC[ThinQProperty.TOTAL_POLLUTION],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.MONITORING_ENABLED],
         JOB_MODE_SENSOR_DESC[ThinQProperty.CURRENT_JOB_MODE],
         JOB_MODE_SENSOR_DESC[ThinQProperty.PERSONALIZATION_MODE],
@@ -220,14 +196,12 @@ DEVICE_TYPE_SENSOR_MAP: dict[DeviceType, tuple[SensorEntityDescription, ...]] = 
     ),
     DeviceType.DRYER: WASHER_SENSORS,
     DeviceType.HOME_BREW: (RUN_STATE_SENSOR_DESC[ThinQProperty.CURRENT_STATE],),
-    DeviceType.HOOD: (OPERATION_SENSOR_DESC[ThinQProperty.HOOD_OPERATION_MODE],),
     DeviceType.HUMIDIFIER: (
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM1],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM2],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM10],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.HUMIDITY],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.TEMPERATURE],
-        AIR_QUALITY_SENSOR_DESC[ThinQProperty.TOTAL_POLLUTION],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.MONITORING_ENABLED],
     ),
     DeviceType.KIMCHI_REFRIGERATOR: (
@@ -269,7 +243,6 @@ DEVICE_TYPE_SENSOR_MAP: dict[DeviceType, tuple[SensorEntityDescription, ...]] = 
     DeviceType.WASHTOWER_WASHER: WASHER_SENSORS,
     DeviceType.WATER_HEATER: (
         TEMPERATURE_SENSOR_DESC[ThinQProperty.CURRENT_TEMPERATURE],
-        OPERATION_SENSOR_DESC[ThinQProperty.WATER_HEATER_OPERATION_MODE],
     ),
     DeviceType.WATER_PURIFIER: (
         RUN_STATE_SENSOR_DESC[ThinQProperty.COCK_STATE],
