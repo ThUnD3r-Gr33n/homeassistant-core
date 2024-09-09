@@ -54,7 +54,7 @@ AIR_QUALITY_MAP = {
 
 
 OPERATIONAL_STATE_MAP = {
-    clusters.OperationalState.Enums.OperationalStateEnum.kStopped : "Stopped",
+    clusters.OperationalState.Enums.OperationalStateEnum.kStopped: "Stopped",
     clusters.OperationalState.Enums.OperationalStateEnum.kRunning: "Running ",
     clusters.OperationalState.Enums.OperationalStateEnum.kPaused: "Paused ",
     clusters.OperationalState.Enums.OperationalStateEnum.kError: "Error",
@@ -570,10 +570,7 @@ DISCOVERY_SCHEMAS = [
         platform=Platform.SENSOR,
         entity_description=MatterSensorEntityDescription(
             key="OperationalState",
-            #native_unit_of_measurement=None,
             device_class=SensorDeviceClass.ENUM,
-            #entity_category=EntityCategory.DIAGNOSTIC,
-            #state_class=SensorStateClass.MEASUREMENT,
             state_class=None,
             # convert to set first to remove the duplicate unknown value
             options=list(set(OPERATIONAL_STATE_MAP.values())),
