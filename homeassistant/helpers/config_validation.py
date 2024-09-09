@@ -7,6 +7,7 @@
 from collections.abc import Callable, Hashable
 import contextlib
 from contextvars import ContextVar
+from copy import copy
 from datetime import (
     date as date_sys,
     datetime as datetime_sys,
@@ -81,6 +82,7 @@ from homeassistant.const import (
     CONF_TARGET,
     CONF_THEN,
     CONF_TIMEOUT,
+    CONF_TRIGGER,
     CONF_UNTIL,
     CONF_VALUE_TEMPLATE,
     CONF_VARIABLES,
@@ -1767,10 +1769,34 @@ CONDITION_ACTION_SCHEMA: vol.Schema = vol.Schema(
     )
 )
 
+
+def _backward_compat_trigger_schema(value: Any | None) -> Any:
+    """Backward compatibility for trigger schemas."""
+
+    if not isinstance(value, dict):
+        return value
+
+    response = copy(value)
+
+    # `platform` has been renamed to `trigger`
+    if CONF_PLATFORM in value:
+        response[CONF_TRIGGER] = value[CONF_PLATFORM]
+    elif CONF_TRIGGER in value:
+        # We should still support the old `platform` key
+        response[CONF_PLATFORM] = value[CONF_TRIGGER]
+
+    return response
+
+
 TRIGGER_BASE_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_ALIAS): str,
-        vol.Required(CONF_PLATFORM): str,
+        vol.Exclusive(CONF_PLATFORM, "trigger"): str,
+        vol.Exclusive(
+            CONF_TRIGGER,
+            "trigger",
+            msg="Cannot specify both 'platform' and 'trigger'. Please use 'trigger' only.",
+        ): str,
         vol.Optional(CONF_ID): str,
         vol.Optional(CONF_VARIABLES): SCRIPT_VARIABLES_SCHEMA,
         vol.Optional(CONF_ENABLED): vol.Any(boolean, template),
@@ -1788,7 +1814,9 @@ def _base_trigger_validator(value: Any) -> Any:
     return value
 
 
-TRIGGER_SCHEMA = vol.All(ensure_list, [_base_trigger_validator])
+TRIGGER_SCHEMA = vol.All(
+    ensure_list, [vol.All(_base_trigger_validator, _backward_compat_trigger_schema)]
+)
 
 _SCRIPT_DELAY_SCHEMA = vol.Schema(
     {
