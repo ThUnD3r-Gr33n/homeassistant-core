@@ -110,6 +110,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_PROM_NAMESPACE, default=DEFAULT_NAMESPACE): cv.string,
                 vol.Optional(CONF_REQUIRES_AUTH, default=True): cv.boolean,
                 vol.Optional(CONF_DEFAULT_METRIC): cv.string,
+                # This variable's default value will be changed to False in early 2025.
                 vol.Optional(CONF_EXPORT_UNAVAILABLE_METRICS, default=True): cv.boolean,
                 vol.Optional(CONF_OVERRIDE_METRIC): cv.string,
                 vol.Optional(CONF_COMPONENT_CONFIG, default={}): vol.Schema(
