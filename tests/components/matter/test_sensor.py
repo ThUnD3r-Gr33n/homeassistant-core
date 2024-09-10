@@ -544,7 +544,7 @@ async def test_dishwasher_sensor(
     assert state
     assert state.state == "0"
 
-    set_node_attribute(air_quality_sensor_node, 1, 96, 1, 4)
+    set_node_attribute(dishwasher_node, 1, 96, 1, 4)
     await trigger_subscription_callback(hass, matter_client)
 
     state = hass.states.get("sensor.dishwasher_operationalstate")
