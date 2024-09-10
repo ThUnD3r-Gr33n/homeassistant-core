@@ -72,8 +72,9 @@ class AssistSatelliteEntity(entity.Entity):
     _run_has_tts: bool = False
     _is_announcing = False
     _wake_word_intercept_future: asyncio.Future[str | None] | None = None
+    _attr_tts_options: dict[str, Any] | None = None
 
-    __assist_satellite_state: AssistSatelliteState | None = None
+    __assist_satellite_state = AssistSatelliteState.LISTENING_WAKE_WORD
 
     @final
     @property
@@ -90,6 +91,11 @@ class AssistSatelliteEntity(entity.Entity):
     def vad_sensitivity_entity_id(self) -> str | None:
         """Entity ID of the VAD sensitivity to use for the next conversation."""
         return self._attr_vad_sensitivity_entity_id
+
+    @property
+    def tts_options(self) -> dict[str, Any] | None:
+        """Options passed for text-to-speech."""
+        return self._attr_tts_options
 
     async def async_intercept_wake_word(self) -> str | None:
         """Intercept the next wake word from the satellite.
@@ -137,6 +143,9 @@ class AssistSatelliteEntity(entity.Entity):
             if pipeline.tts_voice is not None:
                 tts_options[tts.ATTR_VOICE] = pipeline.tts_voice
 
+            if self.tts_options is not None:
+                tts_options.update(self.tts_options)
+
             media_id = tts_generate_media_source_id(
                 self.hass,
                 message,
@@ -160,12 +169,14 @@ class AssistSatelliteEntity(entity.Entity):
             raise SatelliteBusyError
 
         self._is_announcing = True
+        self._set_state(AssistSatelliteState.RESPONDING)
 
         try:
             # Block until announcement is finished
             await self.async_announce(message, media_id)
         finally:
             self._is_announcing = False
+            self.tts_response_finished()
 
     async def async_announce(self, message: str, media_id: str) -> None:
         """Announce media on the satellite.
@@ -253,7 +264,7 @@ class AssistSatelliteEntity(entity.Entity):
             pipeline_id=self._resolve_pipeline(),
             conversation_id=self._conversation_id,
             device_id=device_id,
-            tts_audio_output="wav",
+            tts_audio_output=self.tts_options,
             wake_word_phrase=wake_word_phrase,
             audio_settings=AudioSettings(
                 silence_seconds=self._resolve_vad_sensitivity()
