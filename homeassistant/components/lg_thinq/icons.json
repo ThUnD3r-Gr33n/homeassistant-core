@@ -103,9 +103,6 @@
       },
       "target_temperature_for_location": {
         "default": "mdi:thermometer"
-      },
-      "one_touch_filter": {
-        "default": "mdi:air-filter"
       }
     }
   }
