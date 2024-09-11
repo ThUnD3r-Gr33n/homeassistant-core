@@ -371,14 +371,7 @@
         }
       },
       "water_type": {
-        "name": "Type",
-        "state": {
-          "cold": "Cold",
-          "hot": "Hot",
-          "normal": "Tepid",
-          "mineral": "Mineral",
-          "soda": "Carbonated"
-        }
+        "name": "Type"
       },
       "target_temperature": {
         "name": "Temperature",

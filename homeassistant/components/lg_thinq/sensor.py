@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
 import logging
 
 from thinqconnect import DeviceType
@@ -28,149 +26,153 @@ from . import ThinqConfigEntry
 from .coordinator import DeviceDataUpdateCoordinator
 from .entity import ThinQEntity
 
-
-@dataclass(frozen=True, kw_only=True)
-class ThinQSensorEntityDescription(SensorEntityDescription):
-    """Describes ThinQ sensor entity."""
-
-    options_ex_fn: Callable[[list[str], str], None] | None = None
-
-
-ERROR_DESC = ThinQSensorEntityDescription(
+ERROR_DESC = SensorEntityDescription(
     key=ThinQPropertyEx.ERROR,
+    device_class=SensorDeviceClass.ENUM,
     translation_key=ThinQPropertyEx.ERROR,
 )
 
-AIR_QUALITY_SENSOR_DESC: dict[ThinQProperty, ThinQSensorEntityDescription] = {
-    ThinQProperty.PM1: ThinQSensorEntityDescription(
+AIR_QUALITY_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
+    ThinQProperty.PM1: SensorEntityDescription(
         key=ThinQProperty.PM1,
         device_class=SensorDeviceClass.PM1,
         native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
         state_class=SensorStateClass.MEASUREMENT,
     ),
-    ThinQProperty.PM2: ThinQSensorEntityDescription(
+    ThinQProperty.PM2: SensorEntityDescription(
         key=ThinQProperty.PM2,
         device_class=SensorDeviceClass.PM25,
         native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
         state_class=SensorStateClass.MEASUREMENT,
     ),
-    ThinQProperty.PM10: ThinQSensorEntityDescription(
+    ThinQProperty.PM10: SensorEntityDescription(
         key=ThinQProperty.PM10,
         device_class=SensorDeviceClass.PM10,
         native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
         state_class=SensorStateClass.MEASUREMENT,
     ),
-    ThinQProperty.HUMIDITY: ThinQSensorEntityDescription(
+    ThinQProperty.HUMIDITY: SensorEntityDescription(
         key=ThinQProperty.HUMIDITY,
         device_class=SensorDeviceClass.HUMIDITY,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
-    ThinQProperty.MONITORING_ENABLED: ThinQSensorEntityDescription(
+    ThinQProperty.MONITORING_ENABLED: SensorEntityDescription(
         key=ThinQProperty.MONITORING_ENABLED,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.MONITORING_ENABLED,
     ),
-    ThinQProperty.TEMPERATURE: ThinQSensorEntityDescription(
+    ThinQProperty.TEMPERATURE: SensorEntityDescription(
         key=ThinQProperty.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         translation_key=ThinQProperty.TEMPERATURE,
     ),
 }
-HUMIDITY_SENSOR_DESC: dict[ThinQProperty, ThinQSensorEntityDescription] = {
-    ThinQProperty.CURRENT_HUMIDITY: ThinQSensorEntityDescription(
+HUMIDITY_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
+    ThinQProperty.CURRENT_HUMIDITY: SensorEntityDescription(
         key=ThinQProperty.CURRENT_HUMIDITY,
         device_class=SensorDeviceClass.HUMIDITY,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
     )
 }
-JOB_MODE_SENSOR_DESC: dict[ThinQProperty, ThinQSensorEntityDescription] = {
-    ThinQProperty.CURRENT_JOB_MODE: ThinQSensorEntityDescription(
+JOB_MODE_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
+    ThinQProperty.CURRENT_JOB_MODE: SensorEntityDescription(
         key=ThinQProperty.CURRENT_JOB_MODE,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.CURRENT_JOB_MODE,
     ),
-    ThinQPropertyEx.CURRENT_JOB_MODE_STICK_CLEANER: ThinQSensorEntityDescription(
+    ThinQPropertyEx.CURRENT_JOB_MODE_STICK_CLEANER: SensorEntityDescription(
         key=ThinQProperty.CURRENT_JOB_MODE,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQPropertyEx.CURRENT_JOB_MODE_STICK_CLEANER,
     ),
-    ThinQProperty.PERSONALIZATION_MODE: ThinQSensorEntityDescription(
+    ThinQProperty.PERSONALIZATION_MODE: SensorEntityDescription(
         key=ThinQProperty.PERSONALIZATION_MODE,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.PERSONALIZATION_MODE,
     ),
 }
-REFRIGERATION_SENSOR_DESC: dict[ThinQProperty, ThinQSensorEntityDescription] = {
-    ThinQProperty.FRESH_AIR_FILTER: ThinQSensorEntityDescription(
+REFRIGERATION_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
+    ThinQProperty.FRESH_AIR_FILTER: SensorEntityDescription(
         key=ThinQProperty.FRESH_AIR_FILTER,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.FRESH_AIR_FILTER,
     ),
-    ThinQProperty.ONE_TOUCH_FILTER: ThinQSensorEntityDescription(
+    ThinQProperty.ONE_TOUCH_FILTER: SensorEntityDescription(
         key=ThinQProperty.ONE_TOUCH_FILTER,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.ONE_TOUCH_FILTER,
     ),
 }
-RUN_STATE_SENSOR_DESC: dict[ThinQProperty, ThinQSensorEntityDescription] = {
-    ThinQProperty.CURRENT_STATE: ThinQSensorEntityDescription(
+RUN_STATE_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
+    ThinQProperty.CURRENT_STATE: SensorEntityDescription(
         key=ThinQProperty.CURRENT_STATE,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.CURRENT_STATE,
     ),
-    ThinQProperty.COCK_STATE: ThinQSensorEntityDescription(
+    ThinQProperty.COCK_STATE: SensorEntityDescription(
         key=ThinQProperty.COCK_STATE,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.COCK_STATE,
     ),
-    ThinQProperty.STERILIZING_STATE: ThinQSensorEntityDescription(
+    ThinQProperty.STERILIZING_STATE: SensorEntityDescription(
         key=ThinQProperty.STERILIZING_STATE,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.STERILIZING_STATE,
     ),
-    ThinQProperty.GROWTH_MODE: ThinQSensorEntityDescription(
+    ThinQProperty.GROWTH_MODE: SensorEntityDescription(
         key=ThinQProperty.GROWTH_MODE,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.GROWTH_MODE,
     ),
-    ThinQProperty.WIND_VOLUME: ThinQSensorEntityDescription(
+    ThinQProperty.WIND_VOLUME: SensorEntityDescription(
         key=ThinQProperty.WIND_VOLUME,
         translation_key=ThinQProperty.WIND_VOLUME,
     ),
 }
-TEMPERATURE_SENSOR_DESC: dict[ThinQProperty, ThinQSensorEntityDescription] = {
-    ThinQProperty.TARGET_TEMPERATURE: ThinQSensorEntityDescription(
+TEMPERATURE_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
+    ThinQProperty.TARGET_TEMPERATURE: SensorEntityDescription(
         key=ThinQProperty.TARGET_TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         translation_key=ThinQProperty.TARGET_TEMPERATURE,
     ),
-    ThinQProperty.DAY_TARGET_TEMPERATURE: ThinQSensorEntityDescription(
+    ThinQProperty.DAY_TARGET_TEMPERATURE: SensorEntityDescription(
         key=ThinQProperty.DAY_TARGET_TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         translation_key=ThinQProperty.DAY_TARGET_TEMPERATURE,
     ),
-    ThinQProperty.NIGHT_TARGET_TEMPERATURE: ThinQSensorEntityDescription(
+    ThinQProperty.NIGHT_TARGET_TEMPERATURE: SensorEntityDescription(
         key=ThinQProperty.NIGHT_TARGET_TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         translation_key=ThinQProperty.NIGHT_TARGET_TEMPERATURE,
     ),
-    ThinQProperty.TEMPERATURE_STATE: ThinQSensorEntityDescription(
+    ThinQProperty.TEMPERATURE_STATE: SensorEntityDescription(
         key=ThinQProperty.TEMPERATURE_STATE,
+        device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.TEMPERATURE_STATE,
     ),
-    ThinQProperty.CURRENT_TEMPERATURE: ThinQSensorEntityDescription(
+    ThinQProperty.CURRENT_TEMPERATURE: SensorEntityDescription(
         key=ThinQProperty.CURRENT_TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         translation_key=ThinQProperty.CURRENT_TEMPERATURE,
     ),
 }
-WATER_INFO_SENSOR_DESC: dict[ThinQProperty, ThinQSensorEntityDescription] = {
-    ThinQProperty.WATER_TYPE: ThinQSensorEntityDescription(
+WATER_INFO_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
+    ThinQProperty.WATER_TYPE: SensorEntityDescription(
         key=ThinQProperty.WATER_TYPE,
         translation_key=ThinQProperty.WATER_TYPE,
     ),
 }
-WASHER_SENSORS: tuple[ThinQSensorEntityDescription, ...] = (
+WASHER_SENSORS: tuple[SensorEntityDescription, ...] = (
     ERROR_DESC,
     RUN_STATE_SENSOR_DESC[ThinQProperty.CURRENT_STATE],
 )
-DEVICE_TYPE_SENSOR_MAP: dict[DeviceType, tuple[ThinQSensorEntityDescription, ...]] = {
+DEVICE_TYPE_SENSOR_MAP: dict[DeviceType, tuple[SensorEntityDescription, ...]] = {
     DeviceType.AIR_CONDITIONER: (
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM1],
         AIR_QUALITY_SENSOR_DESC[ThinQProperty.PM2],
@@ -216,10 +218,9 @@ DEVICE_TYPE_SENSOR_MAP: dict[DeviceType, tuple[ThinQSensorEntityDescription, ...
     DeviceType.KIMCHI_REFRIGERATOR: (
         REFRIGERATION_SENSOR_DESC[ThinQProperty.FRESH_AIR_FILTER],
         REFRIGERATION_SENSOR_DESC[ThinQProperty.ONE_TOUCH_FILTER],
-        ThinQSensorEntityDescription(
+        SensorEntityDescription(
             key=ThinQProperty.TARGET_TEMPERATURE,
             translation_key=ThinQProperty.TARGET_TEMPERATURE,
-            options_ex_fn=lambda options, val: options.append(val),
         ),
     ),
     DeviceType.MICROWAVE_OVEN: (RUN_STATE_SENSOR_DESC[ThinQProperty.CURRENT_STATE],),
@@ -295,34 +296,23 @@ async def async_setup_entry(
 class ThinQSensorEntity(ThinQEntity, SensorEntity):
     """Represent a thinq sensor platform."""
 
-    entity_description: ThinQSensorEntityDescription
-
     def __init__(
         self,
         coordinator: DeviceDataUpdateCoordinator,
-        entity_description: ThinQSensorEntityDescription,
+        entity_description: SensorEntityDescription,
         property_id: str,
     ) -> None:
         """Initialize a sensor entity."""
         super().__init__(coordinator, entity_description, property_id)
 
-        self._attr_options = self.data.options
-        if self.options:
-            self._attr_device_class = SensorDeviceClass.ENUM
+        if entity_description.device_class == SensorDeviceClass.ENUM:
+            self._attr_options = self.data.options
 
     def _update_status(self) -> None:
         """Update status itself."""
         super()._update_status()
 
         self._attr_native_value = self.data.value
-        if (
-            self.entity_description.options_ex_fn is not None
-            and self._attr_options
-            and self.options
-            and self.data.value not in self.options
-        ):
-            # For data is not in options, unusual temperature's numeric data
-            self.entity_description.options_ex_fn(self._attr_options, self.data.value)
 
         if (data_unit := self._get_unit_of_measurement(self.data.unit)) is not None:
             # For different from description's unit
