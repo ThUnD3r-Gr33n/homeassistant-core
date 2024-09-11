@@ -400,13 +400,6 @@
           "vegetable_fruit": "Vege/Fruit",
           "temperature_number": "Number"
         }
-      },
-      "one_touch_filter": {
-        "name": "Fresh air filter",
-        "state": {
-          "off": "Off",
-          "on": "On"
-        }
       }
     }
   }

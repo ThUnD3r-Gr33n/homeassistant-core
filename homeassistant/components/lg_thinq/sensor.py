@@ -100,11 +100,6 @@ REFRIGERATION_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
         device_class=SensorDeviceClass.ENUM,
         translation_key=ThinQProperty.FRESH_AIR_FILTER,
     ),
-    ThinQProperty.ONE_TOUCH_FILTER: SensorEntityDescription(
-        key=ThinQProperty.ONE_TOUCH_FILTER,
-        device_class=SensorDeviceClass.ENUM,
-        translation_key=ThinQProperty.ONE_TOUCH_FILTER,
-    ),
 }
 RUN_STATE_SENSOR_DESC: dict[ThinQProperty, SensorEntityDescription] = {
     ThinQProperty.CURRENT_STATE: SensorEntityDescription(
@@ -217,7 +212,6 @@ DEVICE_TYPE_SENSOR_MAP: dict[DeviceType, tuple[SensorEntityDescription, ...]] = 
     ),
     DeviceType.KIMCHI_REFRIGERATOR: (
         REFRIGERATION_SENSOR_DESC[ThinQProperty.FRESH_AIR_FILTER],
-        REFRIGERATION_SENSOR_DESC[ThinQProperty.ONE_TOUCH_FILTER],
         SensorEntityDescription(
             key=ThinQProperty.TARGET_TEMPERATURE,
             translation_key=ThinQProperty.TARGET_TEMPERATURE,
