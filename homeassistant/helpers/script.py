@@ -1132,7 +1132,11 @@ class _ScriptRun:
         self._step_log("wait for trigger", timeout)
 
         variables = {**self._variables}
-        self._variables["wait"] = {"remaining": timeout, "trigger": None}
+        self._variables["wait"] = {
+            "remaining": timeout,
+            "completed": False,
+            "trigger": None,
+        }
         trace_set_result(wait=self._variables["wait"])
 
         if timeout == 0:
@@ -1150,6 +1154,7 @@ class _ScriptRun:
             variables: dict[str, Any], context: Context | None = None
         ) -> None:
             self._async_set_remaining_time_var(timeout_handle)
+            self._variables["wait"]["completed"] = True
             self._variables["wait"]["trigger"] = variables["trigger"]
             _set_result_unless_done(done)
 
