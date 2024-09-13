@@ -9,7 +9,7 @@ from requests import HTTPError
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_DEVICE_ID, CONF_DEVICE, Platform
+from homeassistant.const import ATTR_DEVICE_ID, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
     config_entry_oauth2_flow,
@@ -76,7 +76,15 @@ SERVICE_PROGRAM_SCHEMA = vol.Any(
 
 SERVICE_COMMAND_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): str})
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.LIGHT, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.LIGHT,
+    Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.TIME,
+]
 
 
 def _get_appliance_by_device_id(
@@ -84,8 +92,7 @@ def _get_appliance_by_device_id(
 ) -> api.HomeConnectDevice:
     """Return a Home Connect appliance instance given an device_id."""
     for hc_api in hass.data[DOMAIN].values():
-        for dev_dict in hc_api.devices:
-            device = dev_dict[CONF_DEVICE]
+        for device in hc_api.devices:
             if device.device_id == device_id:
                 return device.appliance
     raise ValueError(f"Appliance for device id {device_id} not found")
@@ -244,7 +251,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 @Throttle(SCAN_INTERVAL)
-async def update_all_devices(hass, entry):
+async def update_all_devices(hass: HomeAssistant, entry):
     """Update all the devices."""
     data = hass.data[DOMAIN]
     hc_api = data[entry.entry_id]
@@ -252,9 +259,7 @@ async def update_all_devices(hass, entry):
     device_registry = dr.async_get(hass)
     try:
         await hass.async_add_executor_job(hc_api.get_devices)
-        for device_dict in hc_api.devices:
-            device = device_dict["device"]
-
+        for device in hc_api.devices:
             device_entry = device_registry.async_get_or_create(
                 config_entry_id=entry.entry_id,
                 identifiers={(DOMAIN, device.appliance.haId)},
