@@ -1,5 +1,7 @@
 """Constants for the madvr-envy integration."""
 
+from enum import Enum
+
 DOMAIN = "madvr"
 
 DEFAULT_NAME = "envy"
@@ -32,3 +34,16 @@ ASPECT_NAME = "aspect_name"
 MASKING_RES = "masking_res"
 MASKING_DEC = "masking_dec"
 MASKING_INT = "masking_int"
+
+
+# Button Commands
+class ButtonCommands(Enum):
+    """Enum for madvr button commands and names."""
+
+    # these use an enum to make grabbing the value and name one operation
+    # internal toggles
+    toggle_debugosd = ["Toggle", "DebugOSD"]
+    # debug commands
+    force1080p60output = ["Force1080p60Output"]
+    # power commands
+    restart = ["Restart"]

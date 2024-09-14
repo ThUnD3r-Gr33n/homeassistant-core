@@ -130,6 +130,14 @@
       "masking_int": {
         "name": "Masking integer"
       }
+    },
+    "button": {
+      "toggle_debugosd": {
+        "name": "Toggle debug osd"
+      },
+      "force1080p60output": {
+        "name": "Force 1080p60 output"
+      }
     }
   }
 }
