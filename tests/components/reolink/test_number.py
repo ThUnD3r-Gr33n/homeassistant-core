@@ -64,6 +64,8 @@ async def test_number(
             blocking=True,
         )
 
+    reolink_connect.set_volume.reset_mock(side_effect=True)
+
 
 async def test_chime_number(
     hass: HomeAssistant,
@@ -109,3 +111,5 @@ async def test_chime_number(
             {ATTR_ENTITY_ID: entity_id, ATTR_VALUE: 1},
             blocking=True,
         )
+
+    test_chime.set_option.reset_mock(side_effect=True)
