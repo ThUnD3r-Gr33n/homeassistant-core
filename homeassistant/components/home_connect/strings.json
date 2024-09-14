@@ -17,6 +17,13 @@
       "default": "[%key:common::config_flow::create_entry::authenticated%]"
     }
   },
+  "entity": {
+    "time": {
+      "bsh-common-setting-alarm_clock": {
+        "name": "Alarm clock"
+      }
+    }
+  },
   "services": {
     "start_program": {
       "name": "Start program",
