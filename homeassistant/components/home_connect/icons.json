@@ -1,4 +1,58 @@
 {
+  "entity": {
+    "sensor": {
+      "refrigeration-fridgeFreezer-event-door-alarm-refrigerator": {
+        "default": "mdi:fridge",
+        "state": {
+          "confirmed": "mdi:fridge-alert-outline",
+          "present": "mdi:fridge-alert"
+        }
+      },
+      "refrigeration-fridge_freezer-event-door_alarm_freezer": {
+        "default": "mdi:snowflake",
+        "state": {
+          "confirmed": "mdi:snowflake-check",
+          "present": "mdi:snowflake-alert"
+        }
+      },
+      "refrigeration-fridge_freezer-event-temperature_alarm_freezer": {
+        "default": "mdi:thermometer",
+        "state": {
+          "confirmed": "mdi:thermometer-check",
+          "present": "mdi:thermometer-alert"
+        }
+      },
+      "consumer_products-coffee_maker-event-bean_container_empty": {
+        "default": "mdi:coffee-maker",
+        "state": {
+          "confirmed": "mdi:coffee-maker-check",
+          "present": "mdi:coffee-maker-outline"
+        }
+      },
+      "consumer_products-coffee_maker-event-water_tank_empty": {
+        "default": "mdi:water",
+        "state": {
+          "confirmed": "mdi:water-check",
+          "present": "mdi:water-alert"
+        }
+      },
+      "consumer_products-coffee_maker-event-drip_tray_full": {
+        "default": "mdi:tray",
+        "state": {
+          "confirmed": "mdi:tray-full",
+          "present": "mdi:tray-alert"
+        }
+      }
+    },
+    "switch": {
+      "refrigeration-common-setting-dispenser-enabled": {
+        "default": "mdi:snowflake",
+        "state": {
+          "off": "mdi:snowflake-off"
+        }
+      }
+    }
+  },
   "services": {
     "start_program": {
       "service": "mdi:play"
@@ -20,60 +74,6 @@
     },
     "change_setting": {
       "service": "mdi:cog"
-    }
-  },
-  "entity": {
-    "sensor": {
-      "alarm_sensor_fridge": {
-        "default": "mdi:fridge",
-        "state": {
-          "confirmed": "mdi:fridge-alert-outline",
-          "present": "mdi:fridge-alert"
-        }
-      },
-      "alarm_sensor_freezer": {
-        "default": "mdi:snowflake",
-        "state": {
-          "confirmed": "mdi:snowflake-check",
-          "present": "mdi:snowflake-alert"
-        }
-      },
-      "alarm_sensor_temp": {
-        "default": "mdi:thermometer",
-        "state": {
-          "confirmed": "mdi:thermometer-check",
-          "present": "mdi:thermometer-alert"
-        }
-      },
-      "alarm_sensor_coffee_bean_container": {
-        "default": "mdi:coffee-maker",
-        "state": {
-          "confirmed": "mdi:coffee-maker-check",
-          "present": "mdi:coffee-maker-outline"
-        }
-      },
-      "alarm_sensor_coffee_water_tank": {
-        "default": "mdi:water",
-        "state": {
-          "confirmed": "mdi:water-check",
-          "present": "mdi:water-alert"
-        }
-      },
-      "alarm_sensor_coffee_drip_tray": {
-        "default": "mdi:tray",
-        "state": {
-          "confirmed": "mdi:tray-full",
-          "present": "mdi:tray-alert"
-        }
-      }
-    },
-    "switch": {
-      "refrigeration_dispenser": {
-        "default": "mdi:snowflake",
-        "state": {
-          "off": "mdi:snowflake-off"
-        }
-      }
     }
   }
 }

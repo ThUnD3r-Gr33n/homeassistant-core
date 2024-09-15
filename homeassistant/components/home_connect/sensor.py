@@ -46,45 +46,32 @@ class HomeConnectSensorEntityDescription(SensorEntityDescription):
     options: list[str] | None = field(
         default_factory=lambda: ["confirmed", "off", "present"]
     )
-    state_key: str
     appliance_types: tuple[str, ...]
 
 
 SENSORS: tuple[HomeConnectSensorEntityDescription, ...] = (
     HomeConnectSensorEntityDescription(
-        key="Door Alarm Freezer",
-        translation_key="alarm_sensor_freezer",
-        state_key=REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
+        key=REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
         appliance_types=("FridgeFreezer", "Freezer"),
     ),
     HomeConnectSensorEntityDescription(
-        key="Door Alarm Refrigerator",
-        translation_key="alarm_sensor_fridge",
-        state_key=REFRIGERATION_EVENT_DOOR_ALARM_REFRIGERATOR,
+        key=REFRIGERATION_EVENT_DOOR_ALARM_REFRIGERATOR,
         appliance_types=("FridgeFreezer", "Refrigerator"),
     ),
     HomeConnectSensorEntityDescription(
-        key="Temperature Alarm Freezer",
-        translation_key="alarm_sensor_temp",
-        state_key=REFRIGERATION_EVENT_TEMP_ALARM_FREEZER,
+        key=REFRIGERATION_EVENT_TEMP_ALARM_FREEZER,
         appliance_types=("FridgeFreezer", "Freezer"),
     ),
     HomeConnectSensorEntityDescription(
-        key="Bean Container Empty",
-        translation_key="alarm_sensor_coffee_bean_container",
-        state_key=COFFEE_EVENT_BEAN_CONTAINER_EMPTY,
+        key=COFFEE_EVENT_BEAN_CONTAINER_EMPTY,
         appliance_types=("CoffeeMaker",),
     ),
     HomeConnectSensorEntityDescription(
-        key="Water Tank Empty",
-        translation_key="alarm_sensor_coffee_water_tank",
-        state_key=COFFEE_EVENT_WATER_TANK_EMPTY,
+        key=COFFEE_EVENT_WATER_TANK_EMPTY,
         appliance_types=("CoffeeMaker",),
     ),
     HomeConnectSensorEntityDescription(
-        key="Drip Tray Full",
-        translation_key="alarm_sensor_coffee_drip_tray",
-        state_key=COFFEE_EVENT_DRIP_TRAY_FULL,
+        key=COFFEE_EVENT_DRIP_TRAY_FULL,
         appliance_types=("CoffeeMaker",),
     ),
 )
@@ -122,10 +109,9 @@ async def async_setup_entry(
 class HomeConnectSensor(HomeConnectEntity, SensorEntity):
     """Sensor class for Home Connect."""
 
-    def __init__(self, device, desc, key, unit, icon, device_class, sign=1):
+    def __init__(self, device, bsh_key, unit, icon, device_class, sign=1) -> None:
         """Initialize the entity."""
-        super().__init__(device, desc)
-        self._key = key
+        super().__init__(device, bsh_key)
         self._sign = sign
         self._attr_native_unit_of_measurement = unit
         self._attr_icon = icon
@@ -139,10 +125,10 @@ class HomeConnectSensor(HomeConnectEntity, SensorEntity):
     async def async_update(self) -> None:
         """Update the sensor's status."""
         status = self.device.appliance.status
-        if self._key not in status:
+        if self.bsh_key not in status:
             self._attr_native_value = None
         elif self.device_class == SensorDeviceClass.TIMESTAMP:
-            if ATTR_VALUE not in status[self._key]:
+            if ATTR_VALUE not in status[self.bsh_key]:
                 self._attr_native_value = None
             elif (
                 self._attr_native_value is not None
@@ -163,13 +149,13 @@ class HomeConnectSensor(HomeConnectEntity, SensorEntity):
                     BSH_OPERATION_STATE_FINISHED,
                 ]
             ):
-                seconds = self._sign * float(status[self._key][ATTR_VALUE])
+                seconds = self._sign * float(status[self.bsh_key][ATTR_VALUE])
                 self._attr_native_value = dt_util.utcnow() + timedelta(seconds=seconds)
             else:
                 self._attr_native_value = None
         else:
-            self._attr_native_value = status[self._key].get(ATTR_VALUE)
-            if self._key == BSH_OPERATION_STATE:
+            self._attr_native_value = status[self.bsh_key].get(ATTR_VALUE)
+            if self.bsh_key == BSH_OPERATION_STATE:
                 # Value comes back as an enum, we only really care about the
                 # last part, so split it off
                 # https://developer.home-connect.com/docs/status/operation_state
@@ -201,7 +187,7 @@ class HomeConnectAlarmSensor(HomeConnectEntity, SensorEntity):
     async def async_update(self) -> None:
         """Update the sensor's status."""
         self._attr_native_value = (
-            self.device.appliance.status.get(self.entity_description.state_key, {})
+            self.device.appliance.status.get(self.bsh_key, {})
             .get(ATTR_VALUE, BSH_EVENT_PRESENT_STATE_OFF)
             .rsplit(".", maxsplit=1)[-1]
             .lower()

@@ -10,12 +10,13 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_DEVICE_ID, CONF_DEVICE, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import (
     config_entry_oauth2_flow,
     config_validation as cv,
     device_registry as dr,
 )
+from homeassistant.helpers.entity_registry import RegistryEntry, async_migrate_entries
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import Throttle
 
@@ -28,6 +29,7 @@ from .const import (
     BSH_PAUSE,
     BSH_RESUME,
     DOMAIN,
+    OLD_NEW_UNIQUE_ID_SUFFIX_MAP,
     SERVICE_OPTION_ACTIVE,
     SERVICE_OPTION_SELECTED,
     SERVICE_PAUSE_PROGRAM,
@@ -268,3 +270,29 @@ async def update_all_devices(hass, entry):
             await hass.async_add_executor_job(device.initialize)
     except HTTPError as err:
         _LOGGER.warning("Cannot update devices: %s", err.response.status_code)
+
+
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+    """Migrate old entry."""
+    _LOGGER.debug("Migrating from version %s", config_entry.version)
+
+    if config_entry.minor_version == 1:
+
+        @callback
+        def update_unique_id(entity_entry: RegistryEntry):
+            """Update unique ID of entity entry."""
+            for old_id_suffix, new_id_suffix in OLD_NEW_UNIQUE_ID_SUFFIX_MAP.items():
+                if entity_entry.unique_id.endswith(old_id_suffix):
+                    return {
+                        "new_unique_id": entity_entry.unique_id.replace(
+                            old_id_suffix, new_id_suffix
+                        )
+                    }
+            return None
+
+        await async_migrate_entries(hass, config_entry.entry_id, update_unique_id)
+
+        hass.config_entries.async_update_entry(config_entry, minor_version=2)
+
+    _LOGGER.info("Migration to version %s successful", config_entry.version)
+    return True

@@ -2,18 +2,23 @@
 
 from collections.abc import Awaitable, Callable
 from typing import Any
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 from freezegun.api import FrozenDateTimeFactory
 import pytest
 from requests import HTTPError
 import requests_mock
 
-from homeassistant.components.home_connect import SCAN_INTERVAL
-from homeassistant.components.home_connect.const import DOMAIN, OAUTH2_TOKEN
+from homeassistant.components.home_connect import SCAN_INTERVAL, async_migrate_entry
+from homeassistant.components.home_connect.const import (
+    DOMAIN,
+    OAUTH2_TOKEN,
+    OLD_NEW_UNIQUE_ID_SUFFIX_MAP,
+)
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.entity_registry import RegistryEntry
 
 from .conftest import (
     CLIENT_ID,
@@ -294,3 +299,46 @@ async def test_services_exception(
 
     with pytest.raises(ValueError):
         await hass.services.async_call(**service_call)
+
+
+TEST_UNIQUE_ID_PREFIX = "unique_id_prefix_"
+
+
+@pytest.mark.parametrize(
+    ("old_unique_id_suffix", "expected_unique_id_suffix"),
+    (
+        (
+            old_unique_id_suffix,
+            expected_unique_id_suffix,
+        )
+        for old_unique_id_suffix, expected_unique_id_suffix in OLD_NEW_UNIQUE_ID_SUFFIX_MAP.items()
+    ),
+)
+async def test_entity_migration(
+    hass: HomeAssistant,
+    non_migrated_config_entry: MockConfigEntry,
+    old_unique_id_suffix: str,
+    expected_unique_id_suffix: str,
+) -> None:
+    """Test entity migration."""
+
+    async def async_migrate_entries(
+        hass: HomeAssistant,
+        config_entry_id: str,
+        entry_callback: Callable[[RegistryEntry], dict[str, Any] | None],
+    ) -> None:
+        entity_entry = MagicMock()
+        entity_entry.unique_id = TEST_UNIQUE_ID_PREFIX + old_unique_id_suffix
+        update = entry_callback(entity_entry)
+        assert update is not None
+        assert "new_unique_id" in update
+        assert (
+            update["new_unique_id"] == TEST_UNIQUE_ID_PREFIX + expected_unique_id_suffix
+        )
+
+    with patch(
+        "homeassistant.helpers.entity_registry.async_migrate_entries",
+        async_migrate_entries,
+    ):
+        async_migrate_entry(hass, non_migrated_config_entry)
+    await hass.async_block_till_done()

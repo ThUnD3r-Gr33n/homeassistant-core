@@ -21,6 +21,46 @@
       "default": "[%key:common::config_flow::create_entry::authenticated%]"
     }
   },
+  "entity": {
+    "sensor": {
+      "refrigeration-fridge_freezer-event-door-alarm-refrigerator": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "refrigeration-fridge_freezer-event-door_alarm_freezer": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "refrigeration-fridge_freezer-event-temperature_alarm_freezer": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "consumer_products-coffee_maker-event-bean_container_empty": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "consumer_products-coffee_maker-event-water_tank_empty": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "consumer_products-coffee_maker-event-drip_tray_full": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      }
+    }
+  },
   "services": {
     "start_program": {
       "name": "Start program",
@@ -131,46 +171,6 @@
         },
         "key": { "name": "Key", "description": "Key of the setting." },
         "value": { "name": "Value", "description": "Value of the setting." }
-      }
-    }
-  },
-  "entity": {
-    "sensor": {
-      "alarm_sensor_fridge": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_freezer": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_temp": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_bean_container": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_water_tank": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_drip_tray": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
       }
     }
   }
