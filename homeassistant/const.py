@@ -871,6 +871,7 @@ class UnitOfLength(StrEnum):
     FEET = "ft"
     YARDS = "yd"
     MILES = "mi"
+    NAUTICALMILES = "nmi"
 
 
 _DEPRECATED_LENGTH_MILLIMETERS: Final = DeprecatedConstantEnum(
