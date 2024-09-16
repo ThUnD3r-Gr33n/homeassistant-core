@@ -13,9 +13,12 @@ from homeassistant.components.home_connect.const import (
     BSH_EVENT_PRESENT_STATE_PRESENT,
     COFFEE_EVENT_BEAN_CONTAINER_EMPTY,
     REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
+    REFRIGERATION_STATUS_DOOR_CLOSED,
+    REFRIGERATION_STATUS_DOOR_OPEN,
+    REFRIGERATION_STATUS_DOOR_REFRIGERATOR,
 )
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import Platform
+from homeassistant.const import STATE_UNAVAILABLE, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_component import async_update_entity
 
@@ -275,6 +278,27 @@ async def test_remaining_prog_time_edge_cases(
             BSH_EVENT_PRESENT_STATE_CONFIRMED,
             "confirmed",
             "CoffeeMaker",
+        ),
+        (
+            "sensor.fridgefreezer_refrigerator_door",
+            REFRIGERATION_STATUS_DOOR_REFRIGERATOR,
+            REFRIGERATION_STATUS_DOOR_CLOSED,
+            "Closed",
+            "FridgeFreezer",
+        ),
+        (
+            "sensor.fridgefreezer_refrigerator_door",
+            REFRIGERATION_STATUS_DOOR_REFRIGERATOR,
+            REFRIGERATION_STATUS_DOOR_OPEN,
+            "Open",
+            "FridgeFreezer",
+        ),
+        (
+            "sensor.fridgefreezer_refrigerator_door",
+            REFRIGERATION_STATUS_DOOR_REFRIGERATOR,
+            None,
+            STATE_UNAVAILABLE,
+            "FridgeFreezer",
         ),
     ],
     indirect=["appliance"],

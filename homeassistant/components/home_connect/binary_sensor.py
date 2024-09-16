@@ -13,9 +13,7 @@ from homeassistant.const import CONF_ENTITIES
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .api import HomeConnectDevice
 from .const import (
-    ATTR_DEVICE,
     ATTR_VALUE,
     BSH_DOOR_STATE,
     BSH_DOOR_STATE_CLOSED,
@@ -24,11 +22,8 @@ from .const import (
     BSH_REMOTE_CONTROL_ACTIVATION_STATE,
     BSH_REMOTE_START_ALLOWANCE_STATE,
     DOMAIN,
-    REFRIGERATION_STATUS_DOOR_CHILLER,
     REFRIGERATION_STATUS_DOOR_CLOSED,
-    REFRIGERATION_STATUS_DOOR_FREEZER,
     REFRIGERATION_STATUS_DOOR_OPEN,
-    REFRIGERATION_STATUS_DOOR_REFRIGERATOR,
 )
 from .entity import HomeConnectEntity
 
@@ -49,22 +44,6 @@ class HomeConnectBinarySensorEntityDescription(BinarySensorEntityDescription):
     )
 
 
-BINARY_SENSORS: tuple[HomeConnectBinarySensorEntityDescription, ...] = (
-    HomeConnectBinarySensorEntityDescription(
-        key="Chiller Door",
-        state_key=REFRIGERATION_STATUS_DOOR_CHILLER,
-    ),
-    HomeConnectBinarySensorEntityDescription(
-        key="Freezer Door",
-        state_key=REFRIGERATION_STATUS_DOOR_FREEZER,
-    ),
-    HomeConnectBinarySensorEntityDescription(
-        key="Refrigerator Door",
-        state_key=REFRIGERATION_STATUS_DOOR_REFRIGERATOR,
-    ),
-)
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -78,15 +57,6 @@ async def async_setup_entry(
         for device_dict in hc_api.devices:
             entity_dicts = device_dict.get(CONF_ENTITIES, {}).get("binary_sensor", [])
             entities += [HomeConnectBinarySensor(**d) for d in entity_dicts]
-            device: HomeConnectDevice = device_dict[ATTR_DEVICE]
-            # Auto-discover entities
-            entities.extend(
-                HomeConnectFridgeDoorBinarySensor(
-                    device=device, entity_description=description
-                )
-                for description in BINARY_SENSORS
-                if description.state_key in device.appliance.status
-            )
         return entities
 
     async_add_entities(await hass.async_add_executor_job(get_entities), True)
@@ -144,37 +114,3 @@ class HomeConnectBinarySensor(HomeConnectEntity, BinarySensorEntity):
     def device_class(self):
         """Return the device class."""
         return self._device_class
-
-
-class HomeConnectFridgeDoorBinarySensor(HomeConnectEntity, BinarySensorEntity):
-    """Binary sensor for Home Connect Fridge Doors."""
-
-    entity_description: HomeConnectBinarySensorEntityDescription
-
-    def __init__(
-        self,
-        device: HomeConnectDevice,
-        entity_description: HomeConnectBinarySensorEntityDescription,
-    ) -> None:
-        """Initialize the entity."""
-        self.entity_description = entity_description
-        super().__init__(device, entity_description.key)
-
-    async def async_update(self) -> None:
-        """Update the binary sensor's status."""
-        _LOGGER.debug(
-            "Updating: %s, cur state: %s",
-            self._attr_unique_id,
-            self.state,
-        )
-        self._attr_is_on = self.entity_description.boolean_map.get(
-            self.device.appliance.status.get(self.entity_description.state_key, {}).get(
-                ATTR_VALUE
-            )
-        )
-        self._attr_available = self._attr_is_on is not None
-        _LOGGER.debug(
-            "Updated: %s, new state: %s",
-            self._attr_unique_id,
-            self.state,
-        )
