@@ -2,26 +2,31 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import dataclass
 import logging
 
 from plexapi.exceptions import NotFound
 import requests.exceptions
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import StateType
 
 from .const import (
     CONF_SERVER_IDENTIFIER,
+    DISPATCHERS,
     DOMAIN,
+    PLEX_NEW_MP_SIGNAL,
     PLEX_UPDATE_LIBRARY_SIGNAL,
     PLEX_UPDATE_SENSOR_SIGNAL,
 )
-from .helpers import get_plex_server, pretty_title
+from .helpers import get_plex_data, get_plex_server, pretty_title
 
 LIBRARY_ATTRIBUTE_TYPES = {
     "artist": ["artist", "album"],
@@ -49,6 +54,57 @@ LIBRARY_ICON_LOOKUP = {
 _LOGGER = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class PlexSensorEntityDescription(SensorEntityDescription):
+    """Describe Plex sensor entity."""
+
+    value_fn: Callable[[PlexMediaSensor], StateType] | None = None
+
+
+PLEX_SENSORS: tuple[PlexSensorEntityDescription, ...] = (
+    PlexSensorEntityDescription(
+        key="year",
+        translation_key="year",
+        value_fn=lambda sensor: sensor.get_attr("media_year"),
+    ),
+    PlexSensorEntityDescription(
+        key="title",
+        translation_key="title",
+        value_fn=lambda sensor: sensor.get_attr("media_title"),
+    ),
+    PlexSensorEntityDescription(
+        key="filename",
+        translation_key="filename",
+        value_fn=lambda sensor: sensor.get_attr("media_filename"),
+    ),
+    PlexSensorEntityDescription(
+        key="codec",
+        translation_key="codec",
+        value_fn=lambda sensor: sensor.get_attr("media_codec"),
+    ),
+    PlexSensorEntityDescription(
+        key="codec_extended",
+        translation_key="codec_extended",
+        value_fn=lambda sensor: sensor.get_attr("media_codec_extended"),
+    ),
+    PlexSensorEntityDescription(
+        key="tmdb_id",
+        translation_key="tmdb_id",
+        value_fn=lambda sensor: sensor.get_attr("media_tmdb_id"),
+    ),
+    PlexSensorEntityDescription(
+        key="tvdb_id",
+        translation_key="tvdb_id",
+        value_fn=lambda sensor: sensor.get_attr("media_tvdb_id"),
+    ),
+    PlexSensorEntityDescription(
+        key="edition_title",
+        translation_key="edition_title",
+        value_fn=lambda sensor: sensor.get_attr("media_edition_title"),
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -56,18 +112,93 @@ async def async_setup_entry(
 ) -> None:
     """Set up Plex sensor from a config entry."""
     server_id = config_entry.data[CONF_SERVER_IDENTIFIER]
-    plexserver = get_plex_server(hass, server_id)
-    sensors: list[SensorEntity] = [PlexSensor(hass, plexserver)]
+    plex_server = get_plex_server(hass, server_id)
+    # add library sensor
+    sensors = [
+        PlexSensor(hass, plex_server),
+    ]
+
+    @callback
+    def async_new_media_players(new_entities):
+        """Create new sensors when new media players are created and attach to them."""
+        new_sensors = []
+        for entity_params in new_entities:
+            client = entity_params["device"]
+            new_sensors.extend(
+                [
+                    PlexMediaSensor(hass, plex_server, client, description)
+                    for description in PLEX_SENSORS
+                ]
+            )
+        async_add_entities(new_sensors, True)
+
+    unsub = async_dispatcher_connect(
+        hass,
+        PLEX_NEW_MP_SIGNAL.format(server_id),
+        async_new_media_players,
+    )
+    get_plex_data(hass)[DISPATCHERS][server_id].append(unsub)
 
     def create_library_sensors():
         """Create Plex library sensors with sync calls."""
         sensors.extend(
-            PlexLibrarySectionSensor(hass, plexserver, library)
-            for library in plexserver.library.sections()
+            PlexLibrarySectionSensor(hass, plex_server, library)
+            for library in plex_server.library.sections()
         )
 
     await hass.async_add_executor_job(create_library_sensors)
-    async_add_entities(sensors)
+    async_add_entities(sensors, True)
+
+
+class PlexMediaSensor(SensorEntity):
+    """Base class for Plex media sensors."""
+
+    entity_description: PlexSensorEntityDescription
+    _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        plex_server,
+        client,
+        description: PlexSensorEntityDescription,
+    ) -> None:
+        """Initialize the sensor."""
+        self.entity_description = description
+        self.hass = hass
+        self._server = plex_server
+        self._client = client
+        self._attr_unique_id = f"{plex_server.machine_identifier}:{client.machineIdentifier}_{description.key}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, client.machineIdentifier)},
+            manufacturer=client.device,
+            model=client.product,
+            name=client.title,
+            via_device=(DOMAIN, self._server.machine_identifier),
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return sensor availability."""
+        return any(
+            session.player.machineIdentifier == self._client.machineIdentifier
+            for session in self._server.active_sessions.values()
+        )
+
+    @property
+    def native_value(self) -> StateType:
+        """Return the state of the sensor."""
+        if self.entity_description.value_fn:
+            return self.entity_description.value_fn(self)
+        return None
+
+    def get_attr(self, attr):
+        """Get the specified attribute from the current media session."""
+        for session in self._server.active_sessions.values():
+            if session.player.machineIdentifier == self._client.machineIdentifier:
+                return getattr(session, attr, None)
+        return None
 
 
 class PlexSensor(SensorEntity):

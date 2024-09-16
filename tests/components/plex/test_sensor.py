@@ -8,7 +8,10 @@ import pytest
 import requests.exceptions
 import requests_mock
 
-from homeassistant.components.plex.const import PLEX_UPDATE_LIBRARY_SIGNAL
+from homeassistant.components.plex.const import (
+    PLEX_UPDATE_LIBRARY_SIGNAL,
+    PLEX_UPDATE_SENSOR_SIGNAL,
+)
 from homeassistant.config_entries import RELOAD_AFTER_UPDATE_DELAY
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
@@ -16,7 +19,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.util import dt as dt_util
 
-from .helpers import trigger_plex_update, wait_for_debouncer
+from .helpers import mock_source, trigger_plex_update, wait_for_debouncer
 
 from tests.common import async_fire_time_changed
 
@@ -266,3 +269,115 @@ async def test_library_sensor_values(
     assert library_music_sensor.attributes["albums"] == 1
     assert library_music_sensor.attributes["last_added_item"] == "Artist - Album (2021)"
     assert library_music_sensor.attributes["last_added_timestamp"] == str(TIMESTAMP)
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+@pytest.mark.parametrize(
+    "session_fixture",
+    [
+        "session_photo",
+        "session_transient",
+        "session_live_tv",
+    ],
+)
+async def test_plex_sensors_special_sessions(
+    hass: HomeAssistant,
+    setup_plex_server,
+    requests_mock: requests_mock.Mocker,
+    session_fixture: pytest.FixtureRequest,
+    request: pytest.FixtureRequest,
+) -> None:
+    """Test the Plex sensors with various types of special sessions."""
+    mock_plex_server = await setup_plex_server()
+    await wait_for_debouncer(hass)
+
+    # Use the parameterized session fixture
+    session_xml = request.getfixturevalue(session_fixture)
+    requests_mock.get("/status/sessions", text=session_xml)
+
+    # Trigger an update
+    async_dispatcher_send(
+        hass,
+        PLEX_UPDATE_SENSOR_SIGNAL.format(mock_plex_server.machine_identifier),
+    )
+    await hass.async_block_till_done()
+
+    # Check that sensors are updated appropriately for each session type
+    # You may need to adjust these assertions based on the expected behavior for each session type
+    for sensor_name in (
+        "year",
+        "title",
+        "filename",
+        "codec",
+        "codec_extended",
+        "tmdb_id",
+        "edition_title",
+    ):
+        sensor = hass.states.get(f"sensor.shield_android_tv_{sensor_name}")
+        assert sensor
+        assert sensor.state is not None
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+async def test_plex_sensors_values(
+    hass: HomeAssistant,
+    setup_plex_server,
+    requests_mock: requests_mock.Mocker,
+    session_base,
+) -> None:
+    """Test the Plex sensors."""
+    with patch("plexapi.video.MovieSession.source", new=mock_source):
+        mock_plex_server = await setup_plex_server()
+        await wait_for_debouncer(hass)
+
+        # Use the session_base fixture
+        requests_mock.get("/status/sessions", text=session_base)
+
+        # Trigger an update
+        async_dispatcher_send(
+            hass,
+            PLEX_UPDATE_SENSOR_SIGNAL.format(mock_plex_server.machine_identifier),
+        )
+        await hass.async_block_till_done()
+
+        # Test year sensor
+        year_sensor = hass.states.get("sensor.shield_android_tv_year")
+        assert year_sensor
+        assert year_sensor.state == "2000"
+
+        # Test title sensor
+        title_sensor = hass.states.get("sensor.shield_android_tv_title")
+        assert title_sensor
+        assert title_sensor.state == "Movie 1"
+
+        # Test filename sensor
+        filename_sensor = hass.states.get("sensor.shield_android_tv_filename")
+        assert filename_sensor
+        assert filename_sensor.state is not None
+
+        # Test codec sensor
+        codec_sensor = hass.states.get("sensor.shield_android_tv_codec")
+        assert codec_sensor
+        assert codec_sensor.state == "English (DTS 5.1)"
+
+        # Test codec long sensor
+        codec_extended = hass.states.get("sensor.shield_android_tv_codec_extended")
+        assert codec_extended
+        assert codec_extended.state == "DTS 5.1 @ 1536 kbps (English)"
+
+        # Test edition title sensor
+        edition_sensor = hass.states.get("sensor.shield_android_tv_edition_title")
+        assert edition_sensor
+        assert (
+            edition_sensor.state == "Extended"
+        )  # will extract from filename which is the most common situation
+
+        # Test TMDB ID sensor
+        tmdb_sensor = hass.states.get("sensor.shield_android_tv_tmdb_id")
+        assert tmdb_sensor
+        assert tmdb_sensor.state == "12345"
+
+        # Test TVDB ID sensor
+        tvdb_sensor = hass.states.get("sensor.shield_android_tv_tvdb_id")
+        assert tvdb_sensor
+        assert tvdb_sensor.state == "67890"

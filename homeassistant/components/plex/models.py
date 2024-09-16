@@ -1,6 +1,7 @@
 """Models to represent various Plex objects used in the integration."""
 
 import logging
+import re
 
 from homeassistant.components.media_player import MediaType
 from homeassistant.helpers.template import result_as_boolean
@@ -43,12 +44,23 @@ class PlexSession:
         self.media_artist = None
         self.media_track = None
 
+        # Metadata
+        self.media_codec = None
+        self.media_codec_extended = None
+        self.media_filename = None
+        self.media_tmdb_id = None
+        self.media_tvdb_id = None
+        self.media_edition_title = None
+        self.media_year = None
+
         # Only available on sessions
         self.player = next(iter(session.players), None)
-        self.device_product = self.player.product
+        if self.player:
+            self.device_product = self.player.product
         self.media_position = session.viewOffset
         self.session_key = session.sessionKey
-        self.state = self.player.state
+        if self.player:
+            self.state = self.player.state
         self.username = next(iter(session.usernames), None)
 
         # Used by sensor entity
@@ -62,16 +74,95 @@ class PlexSession:
         """Return representation of the session."""
         return f"<{self.session_key}:{self.sensor_title}>"
 
+    def update_audio_codec(self, media):
+        """Update audio codec information."""
+        if media_item := next(iter(media.media), None):
+            for stream in media_item.parts[0].streams:
+                if stream.streamType == 2:  # 2 is the audio stream
+                    # plex returns two forms of codecs, both are relevant and important
+                    self.media_codec = stream.displayTitle
+                    self.media_codec_extended = stream.extendedDisplayTitle
+                    break
+
+    def update_item_ids(self, media):
+        """Update TMDB and TVDB ID."""
+        # get the source object from the session
+        try:
+            source = media.source()
+        except AttributeError:
+            # media object is different things in different contexts
+            _LOGGER.debug("No source object found")
+            return
+        _LOGGER.debug(
+            "Attempting to extract TMDB and TVDB IDs from source %s", source.guids
+        )
+        for guid in source.guids:
+            _LOGGER.debug("Found GUID: %s", guid.id)
+            # search for tmdb:// or tvdb:// in the guid.id
+            match guid.id:
+                case str(id_str) if (
+                    tmdb_match := re.search(r"(?:tmdb)://(\d+)", id_str)
+                ):
+                    self.media_tmdb_id = tmdb_match.group(1)
+                    _LOGGER.debug("TMDB ID found: %s", self.media_tmdb_id)
+                case str(id_str) if (
+                    tvdb_match := re.search(r"(?:tvdb)://(\d+)", id_str)
+                ):
+                    self.media_tvdb_id = tvdb_match.group(1)
+                    _LOGGER.debug("TVDB ID found: %s", self.media_tvdb_id)
+
+        _LOGGER.debug(
+            "Final IDs - TMDB: %s, TVDB: %s", self.media_tmdb_id, self.media_tvdb_id
+        )
+
+    def get_edition_name(self, media):
+        """Get the edition name from metadata or filename."""
+        edition = getattr(media, "editionTitle", "")
+        # having edition in metadata is rare
+        if edition:
+            _LOGGER.debug("Found edition title in metadata")
+            return edition
+        # extract edition from filename
+        if self.media_filename:
+            _LOGGER.debug(
+                "Attempting to extract edition from filename %s", self.media_filename
+            )
+            edition_mapping = {
+                "extended": "Extended",
+                "unrated": "Unrated",
+                "theatrical": "Theatrical",
+                "ultimate": "Ultimate",
+                "director": "Director",
+                "criterion": "Criterion",
+            }
+
+            for key, value in edition_mapping.items():
+                if key in self.media_filename.lower():
+                    return value
+
+        return ""
+
     def update_media(self, media):
         """Update attributes from a media object."""
+        _LOGGER.debug("media is type %s", type(media))
         self.media_content_id = media.ratingKey
         self.media_content_rating = getattr(media, "contentRating", None)
         self.media_image_url = self.get_media_image_url(media)
         self.media_summary = media.summary
         self.media_title = media.title
-
         if media.duration:
             self.media_duration = int(media.duration / 1000)
+
+        self.media_year = getattr(media, "year", None)
+
+        if media_item := next(iter(media.media), None):
+            self.media_filename = media_item.parts[0].file if media_item.parts else None
+
+        # Get metadata
+        self.media_edition_title = self.get_edition_name(media)
+        self.update_audio_codec(media)
+        # GUIDs are not present in session objects, only source
+        self.update_item_ids(media)
 
         if media.librarySectionID in SPECIAL_SECTIONS:
             self.media_library_title = SPECIAL_SECTIONS[media.librarySectionID]
@@ -89,7 +180,6 @@ class PlexSession:
             self.media_library_title = (
                 media.section().title if media.librarySectionID is not None else ""
             )
-
         if media.type == "episode":
             self.media_content_type = MediaType.TVSHOW
             self.media_season = media.seasonNumber
@@ -103,8 +193,6 @@ class PlexSession:
             )
         elif media.type == "movie":
             self.media_content_type = MediaType.MOVIE
-            if media.year is not None and media.title is not None:
-                self.media_title += f" ({media.year!s})"
             self.sensor_title = self.media_title
         elif media.type == "track":
             self.media_content_type = MediaType.MUSIC

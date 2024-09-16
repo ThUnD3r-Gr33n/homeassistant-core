@@ -120,7 +120,6 @@ async def test_migrate_transient_devices(
     plex_service_device = device_registry.async_get_device(
         identifiers=plex_client_service_device_id
     )
-
     assert (
         len(er.async_entries_for_device(entity_registry, device_id=plexweb_device.id))
         == 0
