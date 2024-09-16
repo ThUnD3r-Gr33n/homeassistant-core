@@ -1,7 +1,6 @@
 """HTTP view that converts audio from a URL to a preferred format."""
 
 import asyncio
-from collections import defaultdict
 from dataclasses import dataclass, field
 from http import HTTPStatus
 import logging
@@ -27,7 +26,7 @@ def async_create_proxy_url(
     rate: int | None = None,
     channels: int | None = None,
 ) -> str:
-    """Create a one-time use proxy URL that automatically converts the media."""
+    """Create a use proxy URL that automatically converts the media."""
     data: FFmpegProxyData = hass.data[DATA_FFMPEG_PROXY]
     return data.async_create_proxy_url(
         device_id, media_url, media_format, rate, channels
@@ -38,7 +37,10 @@ def async_create_proxy_url(
 class FFmpegConversionInfo:
     """Information for ffmpeg conversion."""
 
-    url: str
+    convert_id: str
+    """Unique id for media conversion."""
+
+    media_url: str
     """Source URL of media to convert."""
 
     media_format: str
@@ -50,18 +52,16 @@ class FFmpegConversionInfo:
     channels: int | None
     """Target number of channels (None to keep source channels)."""
 
+    proc: asyncio.subprocess.Process | None = None
+    """Subprocess doing ffmpeg conversion."""
+
 
 @dataclass
 class FFmpegProxyData:
     """Data for ffmpeg proxy conversion."""
 
-    # device_id -> convert_id -> info
-    conversions: dict[str, dict[str, FFmpegConversionInfo]] = field(
-        default_factory=lambda: defaultdict(dict)
-    )
-
-    # device_id -> process
-    processes: dict[str, asyncio.subprocess.Process] = field(default_factory=dict)
+    # device_id -> info
+    conversions: dict[str, FFmpegConversionInfo] = field(default_factory=dict)
 
     def async_create_proxy_url(
         self,
@@ -72,10 +72,21 @@ class FFmpegProxyData:
         channels: int | None,
     ) -> str:
         """Create a one-time use proxy URL that automatically converts the media."""
+        if (convert_info := self.conversions.pop(device_id, None)) is not None:
+            # Stop existing conversion before overwriting info
+            if (convert_info.proc is not None) and (
+                convert_info.proc.returncode is None
+            ):
+                _LOGGER.debug(
+                    "Stopping existing ffmpeg process for device: %s", device_id
+                )
+                convert_info.proc.kill()
+
         convert_id = secrets.token_urlsafe(16)
-        self.conversions[device_id][convert_id] = FFmpegConversionInfo(
-            media_url, media_format, rate, channels
+        convert_info = FFmpegConversionInfo(
+            convert_id, media_url, media_format, rate, channels
         )
+        self.conversions[device_id] = convert_info
         _LOGGER.debug("Media URL allowed by proxy: %s", media_url)
 
         return f"/api/esphome/ffmpeg_proxy/{device_id}/{convert_id}.{media_format}"
@@ -123,7 +134,7 @@ class FFmpegConvertResponse(web.StreamResponse):
 
         command_args = [
             "-i",
-            self.convert_info.url,
+            self.convert_info.media_url,
             "-f",
             self.convert_info.media_format,
         ]
@@ -147,11 +158,11 @@ class FFmpegConvertResponse(web.StreamResponse):
             stderr=asyncio.subprocess.PIPE,
         )
 
+        # Only one conversion process per device is allowed
+        self.convert_info.proc = proc
+
         assert proc.stdout is not None
         assert proc.stderr is not None
-
-        # Only one conversion process per device is allowed
-        self.proxy_data.processes[self.device_id] = proc
 
         try:
             # Pull audio chunks from ffmpeg and pass them to the HTTP client
@@ -165,11 +176,19 @@ class FFmpegConvertResponse(web.StreamResponse):
                 await writer.write(chunk)
                 await writer.drain()
         finally:
-            # Close connection
-            await writer.write_eof()
+            # Clean up if the conversion hasn't changed
+            if (
+                (convert_info := self.proxy_data.conversions.get(self.device_id))
+                is not None
+            ) and (convert_info.convert_id == self.convert_info.convert_id):
+                self.proxy_data.conversions.pop(self.device_id)
 
             # Terminate hangs, so kill is used
-            proc.kill()
+            if proc.returncode is None:
+                proc.kill()
+
+            # Close connection
+            await writer.write_eof()
 
             if proc.returncode != 0:
                 # Process did not exit successfully
@@ -199,27 +218,25 @@ class FFmpegProxyView(HomeAssistantView):
         self, request: web.Request, device_id: str, filename: str
     ) -> web.StreamResponse:
         """Start a get request."""
-
-        # {id}.mp3 -> id
-        convert_id = filename.rsplit(".")[0]
-
-        try:
-            convert_info = self.proxy_data.conversions[device_id].pop(convert_id)
-        except KeyError:
-            _LOGGER.error(
-                "Unrecognized convert id %s for device: %s", convert_id, device_id
-            )
+        if (convert_info := self.proxy_data.conversions.get(device_id)) is None:
             return web.Response(
-                body="Convert id not recognized", status=HTTPStatus.BAD_REQUEST
+                body="No proxy URL for device", status=HTTPStatus.NOT_FOUND
             )
 
-        # Stop any existing process
-        proc = self.proxy_data.processes.pop(device_id, None)
-        if (proc is not None) and (proc.returncode is None):
-            _LOGGER.debug("Stopping existing ffmpeg process for device: %s", device_id)
+        # {id}.mp3 -> id, mp3
+        convert_id, media_format = filename.rsplit(".")
 
-            # Terminate hangs, so kill is used
-            proc.kill()
+        if (convert_info.convert_id != convert_id) or (
+            convert_info.media_format != media_format
+        ):
+            return web.Response(body="Invalid proxy URL", status=HTTPStatus.BAD_REQUEST)
+
+        # Stop previous process if the URL is being reused.
+        # We could continue from where the previous connection left off, but
+        # there would be no media header.
+        if (convert_info.proc is not None) and (convert_info.proc.returncode is None):
+            convert_info.proc.kill()
+            convert_info.proc = None
 
         # Stream converted audio back to client
         return FFmpegConvertResponse(
