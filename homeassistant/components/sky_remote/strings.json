@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Sky Remote",
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]",
+          "legacy_port": "Legacy Port"
+        },
+        "data_description": {
+          "host": "Hostname or IP address of your Sky device",
+          "legacy_port": "Only enable if running SkyQ firmware < 060"
+        }
+      }
+    }
+  }
+}

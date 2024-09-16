@@ -529,6 +529,7 @@ FLOWS = {
         "simplefin",
         "simplepush",
         "simplisafe",
+        "sky_remote",
         "skybell",
         "slack",
         "sleepiq",
