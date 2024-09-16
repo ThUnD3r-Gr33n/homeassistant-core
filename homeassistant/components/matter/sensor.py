@@ -53,6 +53,14 @@ AIR_QUALITY_MAP = {
 }
 
 
+OPERATIONAL_STATE_MAP = {
+    clusters.OperationalState.Enums.OperationalStateEnum.kStopped: "Stopped",
+    clusters.OperationalState.Enums.OperationalStateEnum.kRunning: "Running ",
+    clusters.OperationalState.Enums.OperationalStateEnum.kPaused: "Paused ",
+    clusters.OperationalState.Enums.OperationalStateEnum.kError: "Error",
+}
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -557,5 +565,19 @@ DISCOVERY_SCHEMAS = [
         required_attributes=(
             clusters.ElectricalEnergyMeasurement.Attributes.CumulativeEnergyImported,
         ),
+    ),
+    MatterDiscoverySchema(
+        platform=Platform.SENSOR,
+        entity_description=MatterSensorEntityDescription(
+            key="OperationalState",
+            device_class=SensorDeviceClass.ENUM,
+            state_class=None,
+            # convert to set first to remove the duplicate unknown value
+            options=list(set(OPERATIONAL_STATE_MAP.values())),
+            measurement_to_ha=lambda x: OPERATIONAL_STATE_MAP[x],
+            icon="mdi:play-pause",
+        ),
+        entity_class=MatterSensor,
+        required_attributes=(clusters.OperationalState.Attributes.OperationalState,),
     ),
 ]
