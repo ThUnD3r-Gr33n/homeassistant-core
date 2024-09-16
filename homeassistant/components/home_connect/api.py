@@ -11,7 +11,6 @@ from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
-    ATTR_ICON,
     CONF_DEVICE,
     CONF_ENTITIES,
     PERCENTAGE,
@@ -178,11 +177,10 @@ class DeviceWithPrograms(HomeConnectDevice):
         device.
         """
         sensors = {
-            BSH_REMAINING_PROGRAM_TIME: (None, None, SensorDeviceClass.TIMESTAMP, 1),
-            BSH_COMMON_OPTION_DURATION: (UnitOfTime.SECONDS, "mdi:update", None, 1),
+            BSH_REMAINING_PROGRAM_TIME: (None, SensorDeviceClass.TIMESTAMP, 1),
+            BSH_COMMON_OPTION_DURATION: (UnitOfTime.SECONDS, None, 1),
             BSH_COMMON_OPTION_PROGRAM_PROGRESS: (
                 PERCENTAGE,
-                "mdi:progress-clock",
                 None,
                 1,
             ),
@@ -192,11 +190,10 @@ class DeviceWithPrograms(HomeConnectDevice):
                 ATTR_DEVICE: self,
                 ATTR_BSH_KEY: k,
                 ATTR_UNIT: unit,
-                ATTR_ICON: icon,
                 ATTR_DEVICE_CLASS: device_class,
                 ATTR_SIGN: sign,
             }
-            for k, (unit, icon, device_class, sign) in sensors.items()
+            for k, (unit, device_class, sign) in sensors.items()
         ]
 
 
@@ -211,7 +208,6 @@ class DeviceWithOpState(HomeConnectDevice):
                 ATTR_DEVICE: self,
                 ATTR_BSH_KEY: BSH_OPERATION_STATE,
                 ATTR_UNIT: None,
-                ATTR_ICON: "mdi:state-machine",
                 ATTR_DEVICE_CLASS: None,
                 ATTR_SIGN: 1,
             }

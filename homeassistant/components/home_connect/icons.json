@@ -1,7 +1,43 @@
 {
   "entity": {
+    "binary_sensor": {
+      "remote_control": {
+        "default": "mdi:remote",
+        "state": {
+          "on": "mdi:remote",
+          "off": "mdi:remote-off"
+        }
+      },
+      "remote_start": {
+        "default": "mdi:remote",
+        "state": {
+          "on": "mdi:remote",
+          "off": "mdi:remote-off"
+        }
+      }
+    },
     "sensor": {
-      "refrigeration-fridgeFreezer-event-door-alarm-refrigerator": {
+      "bsh-common-option-duration": {
+        "default": "mdi:update"
+      },
+      "bsh-common-status-operation_state": {
+        "default": "mdi:state-machine",
+        "state": {
+          "bsh-common-enum_type-operation_state-inactive": "mdi:stop",
+          "bsh-common-enum_type-operation_state-ready": "mdi:check-circle",
+          "bsh-common-enum_type-operation_state-delayed_start": "mdi:progress-clock",
+          "bsh-common-enum_type-operation_state-run": "mdi:play",
+          "bsh-common-enum_type-operation_state-pause": "mdi:pause",
+          "bsh-common-enum_type-operation_state-action_required": "mdi:gesture-tap",
+          "bsh-common-enum_type-operation_state-finished": "mdi:flag-checkered",
+          "bsh-common-enum_type-operation_state-error": "mdi:alert-circle",
+          "bsh-common-enum_type-operation_state-aborting": "mdi:close-circle"
+        }
+      },
+      "bsh-common-option-program_progress": {
+        "default": "mdi:progress-clock"
+      },
+      "refrigeration-fridge_freezer-event-door-alarm-refrigerator": {
         "default": "mdi:fridge",
         "state": {
           "confirmed": "mdi:fridge-alert-outline",
@@ -50,6 +86,16 @@
         "state": {
           "off": "mdi:snowflake-off"
         }
+      },
+      "child_lock": {
+        "default": "mdi:lock",
+        "state": {
+          "on": "mdi:lock",
+          "off": "mdi:lock-off"
+        }
+      },
+      "power": {
+        "default": "mdi:power"
       }
     }
   },

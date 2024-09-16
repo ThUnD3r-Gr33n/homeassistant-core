@@ -102,13 +102,13 @@ async def test_switches(
             STATE_OFF,
         ),
         (
-            "switch.washer_childlock",
+            "switch.washer_child_lock",
             {BSH_CHILD_LOCK_STATE: {"value": True}},
             SERVICE_TURN_ON,
             STATE_ON,
         ),
         (
-            "switch.washer_childlock",
+            "switch.washer_child_lock",
             {BSH_CHILD_LOCK_STATE: {"value": False}},
             SERVICE_TURN_OFF,
             STATE_OFF,
@@ -172,13 +172,13 @@ async def test_switch_functionality(
             "set_setting",
         ),
         (
-            "switch.washer_childlock",
+            "switch.washer_child_lock",
             {BSH_CHILD_LOCK_STATE: {"value": ""}},
             SERVICE_TURN_ON,
             "set_setting",
         ),
         (
-            "switch.washer_childlock",
+            "switch.washer_child_lock",
             {BSH_CHILD_LOCK_STATE: {"value": ""}},
             SERVICE_TURN_OFF,
             "set_setting",
@@ -222,14 +222,14 @@ async def test_switch_exception_handling(
     ("entity_id", "status", "service", "state", "appliance"),
     [
         (
-            "switch.fridgefreezer_supermode_freezer",
+            "switch.fridgefreezer_freezer_super_mode",
             {REFRIGERATION_SUPERMODEFREEZER: {"value": True}},
             SERVICE_TURN_ON,
             STATE_ON,
             "FridgeFreezer",
         ),
         (
-            "switch.fridgefreezer_supermode_freezer",
+            "switch.fridgefreezer_freezer_super_mode",
             {REFRIGERATION_SUPERMODEFREEZER: {"value": False}},
             SERVICE_TURN_OFF,
             STATE_OFF,
@@ -277,14 +277,14 @@ async def test_ent_desc_switch_functionality(
     ("entity_id", "status", "service", "mock_attr", "problematic_appliance"),
     [
         (
-            "switch.fridgefreezer_supermode_freezer",
+            "switch.fridgefreezer_freezer_super_mode",
             {REFRIGERATION_SUPERMODEFREEZER: {"value": ""}},
             SERVICE_TURN_ON,
             "set_setting",
             "FridgeFreezer",
         ),
         (
-            "switch.fridgefreezer_supermode_freezer",
+            "switch.fridgefreezer_freezer_super_mode",
             {REFRIGERATION_SUPERMODEFREEZER: {"value": ""}},
             SERVICE_TURN_OFF,
             "set_setting",

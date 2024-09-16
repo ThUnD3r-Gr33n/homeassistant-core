@@ -20,7 +20,9 @@ from .api import ConfigEntryAuth, HomeConnectDevice
 from .const import (
     ATTR_DEVICE,
     ATTR_VALUE,
+    BSH_EVENT_PRESENT_STATE_CONFIRMED,
     BSH_EVENT_PRESENT_STATE_OFF,
+    BSH_EVENT_PRESENT_STATE_PRESENT,
     BSH_OPERATION_STATE,
     BSH_OPERATION_STATE_FINISHED,
     BSH_OPERATION_STATE_PAUSE,
@@ -34,6 +36,7 @@ from .const import (
     REFRIGERATION_EVENT_TEMP_ALARM_FREEZER,
 )
 from .entity import HomeConnectEntity
+from .utils import bsh_key_to_translation_key
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +47,14 @@ class HomeConnectSensorEntityDescription(SensorEntityDescription):
 
     device_class: SensorDeviceClass | None = SensorDeviceClass.ENUM
     options: list[str] | None = field(
-        default_factory=lambda: ["confirmed", "off", "present"]
+        default_factory=lambda: [
+            bsh_key_to_translation_key(option)
+            for option in (
+                BSH_EVENT_PRESENT_STATE_CONFIRMED,
+                BSH_EVENT_PRESENT_STATE_OFF,
+                BSH_EVENT_PRESENT_STATE_PRESENT,
+            )
+        ]
     )
     appliance_types: tuple[str, ...]
 
@@ -109,12 +119,11 @@ async def async_setup_entry(
 class HomeConnectSensor(HomeConnectEntity, SensorEntity):
     """Sensor class for Home Connect."""
 
-    def __init__(self, device, bsh_key, unit, icon, device_class, sign=1) -> None:
+    def __init__(self, device, bsh_key, unit, device_class, sign=1) -> None:
         """Initialize the entity."""
         super().__init__(device, bsh_key)
         self._sign = sign
         self._attr_native_unit_of_measurement = unit
-        self._attr_icon = icon
         self._attr_device_class = device_class
 
     @property
@@ -156,12 +165,9 @@ class HomeConnectSensor(HomeConnectEntity, SensorEntity):
         else:
             self._attr_native_value = status[self.bsh_key].get(ATTR_VALUE)
             if self.bsh_key == BSH_OPERATION_STATE:
-                # Value comes back as an enum, we only really care about the
-                # last part, so split it off
-                # https://developer.home-connect.com/docs/status/operation_state
-                self._attr_native_value = cast(str, self._attr_native_value).split(".")[
-                    -1
-                ]
+                self._attr_native_value = bsh_key_to_translation_key(
+                    cast(str, self._attr_native_value)
+                )
         _LOGGER.debug("Updated, new state: %s", self._attr_native_value)
 
 
@@ -186,14 +192,12 @@ class HomeConnectAlarmSensor(HomeConnectEntity, SensorEntity):
 
     async def async_update(self) -> None:
         """Update the sensor's status."""
-        self._attr_native_value = (
-            self.device.appliance.status.get(self.bsh_key, {})
-            .get(ATTR_VALUE, BSH_EVENT_PRESENT_STATE_OFF)
-            .rsplit(".", maxsplit=1)[-1]
-            .lower()
+        original_value = self.device.appliance.status.get(self.bsh_key, {}).get(
+            ATTR_VALUE, BSH_EVENT_PRESENT_STATE_OFF
         )
+        self._attr_native_value = bsh_key_to_translation_key(original_value)
         _LOGGER.debug(
             "Updated: %s, new state: %s",
             self._attr_unique_id,
-            self._attr_native_value,
+            original_value,
         )

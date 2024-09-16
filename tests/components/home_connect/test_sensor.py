@@ -14,6 +14,7 @@ from homeassistant.components.home_connect.const import (
     COFFEE_EVENT_BEAN_CONTAINER_EMPTY,
     REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
 )
+from homeassistant.components.home_connect.utils import bsh_key_to_translation_key
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -26,14 +27,14 @@ TEST_HC_APP = "Dishwasher"
 
 EVENT_PROG_DELAYED_START = {
     "BSH.Common.Status.OperationState": {
-        "value": "BSH.Common.EnumType.OperationState.Delayed"
+        "value": "BSH.Common.EnumType.OperationState.DelayedStart"
     },
 }
 
 EVENT_PROG_REMAIN_NO_VALUE = {
     "BSH.Common.Option.RemainingProgramTime": {},
     "BSH.Common.Status.OperationState": {
-        "value": "BSH.Common.EnumType.OperationState.Delayed"
+        "value": "BSH.Common.EnumType.OperationState.DelayedStart"
     },
 }
 
@@ -102,12 +103,15 @@ PROGRAM_SEQUENCE_EVENTS = (
 
 # Entity mapping to expected state at each program sequence.
 ENTITY_ID_STATES = {
-    "sensor.dishwasher_operation_state": (
-        "Delayed",
-        "Run",
-        "Run",
-        "Run",
-        "Ready",
+    "sensor.dishwasher_operation_state": tuple(
+        bsh_key_to_translation_key(state)
+        for state in (
+            "BSH.Common.EnumType.OperationState.DelayedStart",
+            "BSH.Common.EnumType.OperationState.Run",
+            "BSH.Common.EnumType.OperationState.Run",
+            "BSH.Common.EnumType.OperationState.Run",
+            "BSH.Common.EnumType.OperationState.Ready",
+        )
     ),
     "sensor.dishwasher_remaining_program_time": (
         "unavailable",
@@ -221,59 +225,59 @@ async def test_remaining_prog_time_edge_cases(
     ("entity_id", "status_key", "event_value_update", "expected", "appliance"),
     [
         (
-            "sensor.fridgefreezer_door_alarm_freezer",
+            "sensor.fridgefreezer_freezer_door_alarm",
             "EVENT_NOT_IN_STATUS_YET_SO_SET_TO_OFF",
             "",
-            "off",
+            bsh_key_to_translation_key(BSH_EVENT_PRESENT_STATE_OFF),
             "FridgeFreezer",
         ),
         (
-            "sensor.fridgefreezer_door_alarm_freezer",
+            "sensor.fridgefreezer_freezer_door_alarm",
             REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
             BSH_EVENT_PRESENT_STATE_OFF,
-            "off",
+            bsh_key_to_translation_key(BSH_EVENT_PRESENT_STATE_OFF),
             "FridgeFreezer",
         ),
         (
-            "sensor.fridgefreezer_door_alarm_freezer",
+            "sensor.fridgefreezer_freezer_door_alarm",
             REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
             BSH_EVENT_PRESENT_STATE_PRESENT,
-            "present",
+            bsh_key_to_translation_key(BSH_EVENT_PRESENT_STATE_PRESENT),
             "FridgeFreezer",
         ),
         (
-            "sensor.fridgefreezer_door_alarm_freezer",
+            "sensor.fridgefreezer_freezer_door_alarm",
             REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
             BSH_EVENT_PRESENT_STATE_CONFIRMED,
-            "confirmed",
+            bsh_key_to_translation_key(BSH_EVENT_PRESENT_STATE_CONFIRMED),
             "FridgeFreezer",
         ),
         (
             "sensor.coffeemaker_bean_container_empty",
             "EVENT_NOT_IN_STATUS_YET_SO_SET_TO_OFF",
             "",
-            "off",
+            bsh_key_to_translation_key(BSH_EVENT_PRESENT_STATE_OFF),
             "CoffeeMaker",
         ),
         (
             "sensor.coffeemaker_bean_container_empty",
             COFFEE_EVENT_BEAN_CONTAINER_EMPTY,
             BSH_EVENT_PRESENT_STATE_OFF,
-            "off",
+            bsh_key_to_translation_key(BSH_EVENT_PRESENT_STATE_OFF),
             "CoffeeMaker",
         ),
         (
             "sensor.coffeemaker_bean_container_empty",
             COFFEE_EVENT_BEAN_CONTAINER_EMPTY,
             BSH_EVENT_PRESENT_STATE_PRESENT,
-            "present",
+            bsh_key_to_translation_key(BSH_EVENT_PRESENT_STATE_PRESENT),
             "CoffeeMaker",
         ),
         (
             "sensor.coffeemaker_bean_container_empty",
             COFFEE_EVENT_BEAN_CONTAINER_EMPTY,
             BSH_EVENT_PRESENT_STATE_CONFIRMED,
-            "confirmed",
+            bsh_key_to_translation_key(BSH_EVENT_PRESENT_STATE_CONFIRMED),
             "CoffeeMaker",
         ),
     ],

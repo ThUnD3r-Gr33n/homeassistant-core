@@ -9,6 +9,7 @@ from homeassistant.helpers.entity import Entity
 
 from .api import HomeConnectDevice
 from .const import DOMAIN, SIGNAL_UPDATE_ENTITIES
+from .utils import bsh_key_to_translation_key
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,11 +20,13 @@ class HomeConnectEntity(Entity):
     device: HomeConnectDevice
     _attr_bsh_key: str
     _attr_should_poll = False
+    _attr_has_entity_name = True
 
     def __init__(self, device: HomeConnectDevice, bsh_key: str) -> None:
         """Initialize the entity."""
         self.device = device
         self._attr_bsh_key = bsh_key
+        self._attr_translation_key = bsh_key_to_translation_key(self.bsh_key)
         self._attr_unique_id = f"{device.appliance.haId}-{self.bsh_key}"
 
         self._attr_device_info = DeviceInfo(
