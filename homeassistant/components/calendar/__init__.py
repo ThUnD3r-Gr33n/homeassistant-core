@@ -52,6 +52,7 @@ from .const import (
     EVENT_IN_DAYS,
     EVENT_IN_WEEKS,
     EVENT_LOCATION,
+    EVENT_PARTSTAT,
     EVENT_RECURRENCE_ID,
     EVENT_RECURRENCE_RANGE,
     EVENT_RRULE,
@@ -78,6 +79,8 @@ SCAN_INTERVAL = datetime.timedelta(seconds=60)
 
 # Don't support rrules more often than daily
 VALID_FREQS = {"DAILY", "WEEKLY", "MONTHLY", "YEARLY"}
+
+VALID_PARTSTATS = {"NEEDS_ACTION", "DECLINED", "TENTATIVE", "ACCEPTED"}
 
 # Ensure events created in Home Assistant have a positive duration
 MIN_NEW_EVENT_DURATION = datetime.timedelta(seconds=1)
@@ -165,6 +168,17 @@ def _has_same_type(*keys: Any) -> Callable[[dict[str, Any]], dict[str, Any]]:
     return validate
 
 
+def _validate_partstat(value: Any) -> str:
+    """Validate a partstat string."""
+    if not isinstance(value, str):
+        raise vol.Invalid("partstat value expected a string")
+
+    if value not in VALID_PARTSTATS:
+        raise vol.Invalid(f"Invalid partstat: {value}")
+
+    return str(value)
+
+
 def _validate_rrule(value: Any) -> str:
     """Validate a recurrence rule string."""
     if value is None:
@@ -242,6 +256,7 @@ WEBSOCKET_EVENT_SCHEMA = vol.Schema(
             vol.Optional(EVENT_DESCRIPTION): cv.string,
             vol.Optional(EVENT_LOCATION): cv.string,
             vol.Optional(EVENT_RRULE): _validate_rrule,
+            vol.Optional(EVENT_PARTSTAT): _validate_partstat,
         },
         _has_same_type(EVENT_START, EVENT_END),
         _has_consistent_timezone(EVENT_START, EVENT_END),
@@ -258,6 +273,7 @@ CALENDAR_EVENT_SCHEMA = vol.Schema(
             vol.Required("end"): vol.Any(cv.date, cv.datetime),
             vol.Required(EVENT_SUMMARY): cv.string,
             vol.Optional(EVENT_RRULE): _validate_rrule,
+            vol.Optional(EVENT_PARTSTAT): _validate_partstat,
         },
         _has_same_type("start", "end"),
         _has_timezone("start", "end"),
@@ -350,6 +366,7 @@ class CalendarEvent:
     summary: str
     description: str | None = None
     location: str | None = None
+    partstat: str | None = None
 
     uid: str | None = None
     recurrence_id: str | None = None
