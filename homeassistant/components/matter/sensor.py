@@ -239,6 +239,15 @@ DISCOVERY_SCHEMAS = [
     MatterDiscoverySchema(
         platform=Platform.SENSOR,
         entity_description=MatterSensorEntityDescription(
+            key="EveThermoValvePosition",
+            device_class=ValveDeviceClass.WATER,
+        ),
+        entity_class=MatterSensor,
+        required_attributes=(EveCluster.Attributes.ValvePosition,),
+    ),
+    MatterDiscoverySchema(
+        platform=Platform.SENSOR,
+        entity_description=MatterSensorEntityDescription(
             key="CarbonDioxideSensor",
             native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION,
             device_class=SensorDeviceClass.CO2,
