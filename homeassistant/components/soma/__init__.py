@@ -90,7 +90,7 @@ def soma_api_call[_SomaEntityT: SomaEntity](
         else:
             if not self.api_is_available:
                 self.api_is_available = True
-                _LOGGER.info("Connection to SOMA Connect succeeded")
+                _LOGGER.debug("Connection to SOMA Connect succeeded")
 
             if not is_api_response_success(response_from_api):
                 if self.is_available:
@@ -106,7 +106,7 @@ def soma_api_call[_SomaEntityT: SomaEntity](
             else:
                 if not self.is_available:
                     self.is_available = True
-                    _LOGGER.info("Device %s is now reachable", self.name)
+                    _LOGGER.warning("Device %s is now reachable", self.name)
                 response = response_from_api
         return response
 
