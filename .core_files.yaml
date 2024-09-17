@@ -47,6 +47,7 @@ base_platforms: &base_platforms
   - homeassistant/components/text/**
   - homeassistant/components/time/**
   - homeassistant/components/todo/**
+  - homeassistant/components/trace/**
   - homeassistant/components/tts/**
   - homeassistant/components/update/**
   - homeassistant/components/vacuum/**
