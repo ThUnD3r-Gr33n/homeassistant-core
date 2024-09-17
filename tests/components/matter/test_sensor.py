@@ -84,6 +84,16 @@ async def eve_energy_plug_patched_node_fixture(
     )
 
 
+@pytest.fixture(name="eve_weather_sensor_node")
+async def eve_weather_sensor_node_fixture(
+    hass: HomeAssistant, matter_client: MagicMock
+) -> MatterNode:
+    """Fixture for a Eve Weather sensor node."""
+    return await setup_integration_with_node_fixture(
+        hass, "eve-weather-sensor", matter_client
+    )
+
+
 @pytest.fixture(name="air_quality_sensor_node")
 async def air_quality_sensor_node_fixture(
     hass: HomeAssistant, matter_client: MagicMock
@@ -196,12 +206,12 @@ async def test_pressure_sensor(
     assert state
     assert state.state == "0.0"
 
-    set_node_attribute(pressure_sensor_node, 1, 1027, 0, 1010)
+    set_node_attribute(pressure_sensor_node, 1, 319486977, 319422484, 1008.5)
     await trigger_subscription_callback(hass, matter_client)
 
     state = hass.states.get("sensor.mock_pressure_sensor_pressure")
     assert state
-    assert state.state == "101.0"
+    assert state.state == "1008.5"
 
 
 # This tests needs to be adjusted to remove lingering tasks
@@ -382,6 +392,26 @@ async def test_energy_sensors(
     # ensure we do not have a duplicated entity from the custom cluster
     state = hass.states.get(f"{entity_id}_1")
     assert state is None
+
+
+# This tests needs to be adjusted to remove lingering tasks
+@pytest.mark.parametrize("expected_lingering_tasks", [True])
+async def test_eve_weather_sensor_custom_cluster(
+    hass: HomeAssistant,
+    entity_registry: er.EntityRegistry,
+    matter_client: MagicMock,
+    eve_weather_sensor_node: MatterNode,
+) -> None:
+    """Test weather sensor created from (Eve) custom cluster."""
+    # pressure sensor on Eve custom cluster
+    state = hass.states.get("sensor.eve_weather_sensor_pressure")
+    assert state
+    assert state.state == "1008.5"
+
+    set_node_attribute(eve_weather_sensor_node, 1, 319486977, 319422484, 1008.5)
+    await trigger_subscription_callback(hass, matter_client)
+
+    state = hass.states.get("sensor.eve_weather_sensor_pressure")
 
 
 # This tests needs to be adjusted to remove lingering tasks
