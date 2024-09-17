@@ -589,6 +589,7 @@ FLOWS = {
         "tautulli",
         "technove",
         "tedee",
+        "telegram_client",
         "tellduslive",
         "tesla_fleet",
         "tesla_wall_connector",
