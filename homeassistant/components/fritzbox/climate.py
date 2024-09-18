@@ -175,7 +175,13 @@ class FritzboxThermostat(FritzBoxDeviceEntity, ClimateEntity):
         if hvac_mode == HVACMode.OFF:
             await self.async_set_temperature(temperature=OFF_REPORT_SET_TEMPERATURE)
         else:
-            await self.async_set_temperature(temperature=self.data.comfort_temperature)
+            if (
+                nextchange_temperature := self.data.nextchange_temperature
+            ) is not None and nextchange_temperature == self.data.comfort_temperature:
+                target_temp = self.data.eco_temperature
+            else:
+                target_temp = self.data.comfort_temperature
+            await self.async_set_temperature(temperature=target_temp)
 
     @property
     def preset_mode(self) -> str | None:
