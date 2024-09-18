@@ -14,8 +14,11 @@ from homeassistant.util import dt as dt_util
 from .const import (
     SENSOR_UPDATE_INTERVAL,
     STATUS_API_TIMEOUT,
+    STATUS_QUERY_VERSION,
     STATUS_SENSOR_LASTSCAN,
     STATUS_SENSOR_NEEDSRESTART,
+    STATUS_SENSOR_NEWPLUGINS,
+    STATUS_SENSOR_NEWVERSION,
     STATUS_SENSOR_RESCAN,
 )
 
@@ -35,7 +38,21 @@ class LMSStatusDataUpdateCoordinator(DataUpdateCoordinator):
             always_update=False,
         )
         self.lms = lms
-        self.newversion_regex = re.compile("<.*$")
+        self.can_server_restart = False
+        self.newversion_regex_pre = re.compile("^.*\\(")
+        self.newversion_regex_post = re.compile("\\)\\. <.*$")
+        self.newversion_regex_windows_pre = re.compile("^<ul><li>[\\S]+ ")
+        self.newversion_regex_windows_post = re.compile("[\\D]*</li><li>.*$")
+        self.newplugins_regex = re.compile(".* - ")
+
+    async def _async_setup(self) -> None:
+        """Query LMS capabilities."""
+        result = await self.lms.async_query("can", "restartserver", "?")
+        if result and "_can" in result and result["_can"] == 1:
+            _LOGGER.debug("Can restart %s", self.lms.name)
+            self.can_server_restart = True
+        else:
+            _LOGGER.warning("Can't query server capabilities %s", self.lms.name)
 
     async def _async_update_data(self) -> dict:
         """Fetch data fromn LMS status call.
@@ -46,7 +63,7 @@ class LMSStatusDataUpdateCoordinator(DataUpdateCoordinator):
             data = await self.lms.async_status()
 
         if not data:
-            raise UpdateFailed("No data from status poll")
+            raise UpdateFailed(f"No data from status poll for {self.lms.name}")
         _LOGGER.debug("Raw serverstatus %s=%s", self.lms.name, data)
 
         return self._prepare_status_data(data)
@@ -66,6 +83,35 @@ class LMSStatusDataUpdateCoordinator(DataUpdateCoordinator):
             dt_util.utc_from_timestamp(int(data[STATUS_SENSOR_LASTSCAN]))
             if STATUS_SENSOR_LASTSCAN in data
             else None
+        )
+
+        # Updates
+        # newversion str not always present
+        # Sample text:-
+        # 'A new version of Logitech Media Server is available (8.5.2 - 0). <a href="updateinfo.html?installerFile=/var/lib/squeezeboxserver/cache/updates/logitechmediaserver_8.5.2_amd64.deb" target="update">Click here for further information</a>.'
+        # '<ul><li>Version %s - %s is available for installation.</li><li>Log in to your computer running Logitech Media Server (%s).</li><li>Execute <code>%s</code> and follow the instructions.</li></ul>'
+        data[STATUS_SENSOR_NEWVERSION] = (
+            self.newversion_regex_pre.sub(
+                "",
+                self.newversion_regex_post.sub(
+                    "",
+                    self.newversion_regex_windows_pre.sub(
+                        "",
+                        self.newversion_regex_windows_post.sub(
+                            "", data[STATUS_SENSOR_NEWVERSION]
+                        ),
+                    ),
+                ),
+            )
+            if STATUS_SENSOR_NEWVERSION in data
+            else data[STATUS_QUERY_VERSION]
+        )
+        # newplugins str not always present
+        # newplugins': 'Plugins have been updated - Restart Required (BBC Sounds)
+        data[STATUS_SENSOR_NEWPLUGINS] = (
+            self.newplugins_regex.sub("", data[STATUS_SENSOR_NEWPLUGINS])
+            if STATUS_SENSOR_NEWPLUGINS in data
+            else "current"
         )
 
         _LOGGER.debug("Processed serverstatus %s=%s", self.lms.name, data)
