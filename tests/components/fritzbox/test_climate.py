@@ -324,8 +324,7 @@ async def test_set_temperature_mode_heat(hass: HomeAssistant, fritz: Mock) -> No
         },
         True,
     )
-    # FritzDeviceClimateMock has current preset ECO
-    assert device.set_target_temperature.call_args_list == [call(16)]
+    assert device.set_target_temperature.call_args_list == [call(22)]
 
 
 async def test_set_hvac_mode_off(hass: HomeAssistant, fritz: Mock) -> None:
