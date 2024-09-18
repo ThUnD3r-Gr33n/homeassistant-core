@@ -29,6 +29,7 @@ PLATFORMS = [
     Platform.COVER,
     Platform.FAN,
     Platform.IMAGE,
+    Platform.LAWN_MOWER,
     Platform.LIGHT,
     Platform.LOCK,
     Platform.NUMBER,
