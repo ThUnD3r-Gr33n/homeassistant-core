@@ -3,6 +3,60 @@
     "confirmed": "Confirmed",
     "present": "Present"
   },
+  "entity": {
+    "light": {
+      "bsh-common-setting-ambient_light_enabled": {
+        "name": "Ambient light"
+      },
+      "cooking-common-setting-lighting": {
+        "name": "Functional light"
+      },
+      "refrigeration-common-setting-light-external-power": {
+        "name": "External light"
+      },
+      "refrigeration-common-setting-light-internal-power": {
+        "name": "Internal light"
+      }
+    },
+    "sensor": {
+      "alarm_sensor_fridge": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_freezer": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_temp": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_coffee_bean_container": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_coffee_water_tank": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_coffee_drip_tray": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "pick_implementation": {
@@ -131,46 +185,6 @@
         },
         "key": { "name": "Key", "description": "Key of the setting." },
         "value": { "name": "Value", "description": "Value of the setting." }
-      }
-    }
-  },
-  "entity": {
-    "sensor": {
-      "alarm_sensor_fridge": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_freezer": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_temp": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_bean_container": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_water_tank": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_drip_tray": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
       }
     }
   }
