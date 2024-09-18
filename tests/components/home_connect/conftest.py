@@ -70,6 +70,19 @@ def mock_config_entry(token_entry: dict[str, Any]) -> MockConfigEntry:
     )
 
 
+@pytest.fixture(name="non_migrated_config_entry")
+def mock_non_migrated_config_entry(token_entry: dict[str, Any]) -> MockConfigEntry:
+    """Fixture for a config entry that has not been migrated."""
+    return MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "auth_implementation": FAKE_AUTH_IMPL,
+            "token": token_entry,
+        },
+        minor_version=1,
+    )
+
+
 @pytest.fixture
 async def setup_credentials(hass: HomeAssistant) -> None:
     """Fixture to setup credentials."""

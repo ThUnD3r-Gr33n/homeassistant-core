@@ -1,7 +1,8 @@
 {
   "common": {
-    "confirmed": "Confirmed",
-    "present": "Present"
+    "event_present_state_off": "Off",
+    "event_present_state_confirmed": "Confirmed",
+    "event_present_state_present": "Present"
   },
   "config": {
     "step": {
@@ -19,6 +20,129 @@
     },
     "create_entry": {
       "default": "[%key:common::config_flow::create_entry::authenticated%]"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "bsh-common-status-remote_control_active": {
+        "name": "Remote control"
+      },
+      "bsh-common-status-remote_control_start_allowed": {
+        "name": "Remote start"
+      },
+      "refrigeration-common-status-door-chiller_common": {
+        "name": "Chiller door alarm"
+      },
+      "refrigeration-common-status-door-freezer": {
+        "name": "Freezer door"
+      },
+      "refrigeration-common-status-door-refrigerator": {
+        "name": "Refrigerator door"
+      }
+    },
+    "light": {
+      "bsh-common-setting-ambient_light_enabled": {
+        "name": "Ambient light"
+      },
+      "cooking-common-setting-lighting": {
+        "name": "Functional light"
+      },
+      "refrigeration-common-setting-light-external-power": {
+        "name": "External light"
+      },
+      "refrigeration-common-setting-light-internal-power": {
+        "name": "Internal light"
+      }
+    },
+    "sensor": {
+      "bsh-common-option-duration": {
+        "name": "Duration"
+      },
+      "bsh-common-option-program_progress": {
+        "name": "Program progress"
+      },
+      "bsh-common-option-remaining_program_time": {
+        "name": "Remaining program time"
+      },
+      "bsh-common-status-operation_state": {
+        "name": "Operation state",
+        "state": {
+          "bsh-common-enum_type-operation_state-inactive": "Inactive",
+          "bsh-common-enum_type-operation_state-ready": "Ready",
+          "bsh-common-enum_type-operation_state-delayed_start": "Delayed Start",
+          "bsh-common-enum_type-operation_state-run": "Run",
+          "bsh-common-enum_type-operation_state-pause": "Pause",
+          "bsh-common-enum_type-operation_state-action_required": "Action required",
+          "bsh-common-enum_type-operation_state-finished": "Finished",
+          "bsh-common-enum_type-operation_state-error": "Error",
+          "bsh-common-enum_type-operation_state-aborting": "Aborting"
+        }
+      },
+      "refrigeration-fridge_freezer-event-door-alarm-refrigerator": {
+        "name": "Refrigerator door alarm",
+        "state": {
+          "bsh-common-enum_type-event_present_state-off": "[%key:component::home_connect::common::event_present_state_off%]",
+          "bsh-common-enum_type-event_present_state-confirmed": "[%key:component::home_connect::common::event_present_state_confirmed%]",
+          "bsh-common-enum_type-event_present_state-present": "[%key:component::home_connect::common::event_present_state_present%]"
+        }
+      },
+      "refrigeration-fridge_freezer-event-door_alarm_freezer": {
+        "name": "Freezer door alarm",
+        "state": {
+          "bsh-common-enum_type-event_present_state-off": "[%key:component::home_connect::common::event_present_state_off%]",
+          "bsh-common-enum_type-event_present_state-confirmed": "[%key:component::home_connect::common::event_present_state_confirmed%]",
+          "bsh-common-enum_type-event_present_state-present": "[%key:component::home_connect::common::event_present_state_present%]"
+        }
+      },
+      "refrigeration-fridge_freezer-event-temperature_alarm_freezer": {
+        "name": "Freezer temperature alarm",
+        "state": {
+          "bsh-common-enum_type-event_present_state-off": "[%key:component::home_connect::common::event_present_state_off%]",
+          "bsh-common-enum_type-event_present_state-confirmed": "[%key:component::home_connect::common::event_present_state_confirmed%]",
+          "bsh-common-enum_type-event_present_state-present": "[%key:component::home_connect::common::event_present_state_present%]"
+        }
+      },
+      "consumer_products-coffee_maker-event-bean_container_empty": {
+        "name": "Bean container empty",
+        "state": {
+          "bsh-common-enum_type-event_present_state-off": "[%key:component::home_connect::common::event_present_state_off%]",
+          "bsh-common-enum_type-event_present_state-confirmed": "[%key:component::home_connect::common::event_present_state_confirmed%]",
+          "bsh-common-enum_type-event_present_state-present": "[%key:component::home_connect::common::event_present_state_present%]"
+        }
+      },
+      "consumer_products-coffee_maker-event-water_tank_empty": {
+        "name": "Water tank empty",
+        "state": {
+          "bsh-common-enum_type-event_present_state-off": "[%key:component::home_connect::common::event_present_state_off%]",
+          "bsh-common-enum_type-event_present_state-confirmed": "[%key:component::home_connect::common::event_present_state_confirmed%]",
+          "bsh-common-enum_type-event_present_state-present": "[%key:component::home_connect::common::event_present_state_present%]"
+        }
+      },
+      "consumer_products-coffee_maker-event-drip_tray_full": {
+        "name": "Drip tray full",
+        "state": {
+          "bsh-common-enum_type-event_present_state-off": "[%key:component::home_connect::common::event_present_state_off%]",
+          "bsh-common-enum_type-event_present_state-confirmed": "[%key:component::home_connect::common::event_present_state_confirmed%]",
+          "bsh-common-enum_type-event_present_state-present": "[%key:component::home_connect::common::event_present_state_present%]"
+        }
+      }
+    },
+    "switch": {
+      "bsh-common-setting-power_state": {
+        "name": "Power"
+      },
+      "bsh-common-setting-child_lock": {
+        "name": "Child lock"
+      },
+      "refrigeration-fridge_freezer-setting-super_mode_refrigerator": {
+        "name": "Refrigerator super mode"
+      },
+      "refrigeration-fridge_freezer-setting-super_mode_freezer": {
+        "name": "Freezer super mode"
+      },
+      "refrigeration-common-setting-dispenser-enabled": {
+        "name": "Dispenser enabled"
+      }
     }
   },
   "services": {
@@ -131,46 +255,6 @@
         },
         "key": { "name": "Key", "description": "Key of the setting." },
         "value": { "name": "Value", "description": "Value of the setting." }
-      }
-    }
-  },
-  "entity": {
-    "sensor": {
-      "alarm_sensor_fridge": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_freezer": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_temp": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_bean_container": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_water_tank": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_drip_tray": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
       }
     }
   }

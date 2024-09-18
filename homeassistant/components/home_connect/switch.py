@@ -34,22 +34,16 @@ _LOGGER = logging.getLogger(__name__)
 class HomeConnectSwitchEntityDescription(SwitchEntityDescription):
     """Switch entity description."""
 
-    on_key: str
-
 
 SWITCHES: tuple[HomeConnectSwitchEntityDescription, ...] = (
     HomeConnectSwitchEntityDescription(
-        key="Supermode Freezer",
-        on_key=REFRIGERATION_SUPERMODEFREEZER,
+        key=REFRIGERATION_SUPERMODEFREEZER,
     ),
     HomeConnectSwitchEntityDescription(
-        key="Supermode Refrigerator",
-        on_key=REFRIGERATION_SUPERMODEREFRIGERATOR,
+        key=REFRIGERATION_SUPERMODEREFRIGERATOR,
     ),
     HomeConnectSwitchEntityDescription(
-        key="Dispenser Enabled",
-        on_key=REFRIGERATION_DISPENSER,
-        translation_key="refrigeration_dispenser",
+        key=REFRIGERATION_DISPENSER,
     ),
 )
 
@@ -75,7 +69,7 @@ async def async_setup_entry(
             entities.extend(
                 HomeConnectSwitch(device=hc_device, entity_description=description)
                 for description in SWITCHES
-                if description.on_key in hc_device.appliance.status
+                if description.key in hc_device.appliance.status
             )
             entities.extend(entity_list)
 
@@ -97,7 +91,7 @@ class HomeConnectSwitch(HomeConnectEntity, SwitchEntity):
     ) -> None:
         """Initialize the entity."""
         self.entity_description = entity_description
-        super().__init__(device=device, desc=entity_description.key)
+        super().__init__(device=device, bsh_key=entity_description.key)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on setting."""
@@ -105,7 +99,7 @@ class HomeConnectSwitch(HomeConnectEntity, SwitchEntity):
         _LOGGER.debug("Turning on %s", self.entity_description.key)
         try:
             await self.hass.async_add_executor_job(
-                self.device.appliance.set_setting, self.entity_description.on_key, True
+                self.device.appliance.set_setting, self.entity_description.key, True
             )
         except HomeConnectError as err:
             _LOGGER.error("Error while trying to turn on: %s", err)
@@ -121,7 +115,7 @@ class HomeConnectSwitch(HomeConnectEntity, SwitchEntity):
         _LOGGER.debug("Turning off %s", self.entity_description.key)
         try:
             await self.hass.async_add_executor_job(
-                self.device.appliance.set_setting, self.entity_description.on_key, False
+                self.device.appliance.set_setting, self.entity_description.key, False
             )
         except HomeConnectError as err:
             _LOGGER.error("Error while trying to turn off: %s", err)
@@ -135,7 +129,7 @@ class HomeConnectSwitch(HomeConnectEntity, SwitchEntity):
         """Update the switch's status."""
 
         self._attr_is_on = self.device.appliance.status.get(
-            self.entity_description.on_key, {}
+            self.entity_description.key, {}
         ).get(ATTR_VALUE)
         self._attr_available = True
         _LOGGER.debug(
@@ -148,6 +142,8 @@ class HomeConnectSwitch(HomeConnectEntity, SwitchEntity):
 class HomeConnectProgramSwitch(HomeConnectEntity, SwitchEntity):
     """Switch class for Home Connect."""
 
+    _attr_has_entity_name = False
+
     def __init__(self, device, program_name):
         """Initialize the entity."""
         desc = " ".join(["Program", program_name.split(".")[-1]])
@@ -156,6 +152,8 @@ class HomeConnectProgramSwitch(HomeConnectEntity, SwitchEntity):
                 ["Program", program_name.split(".")[-3], program_name.split(".")[-1]]
             )
         super().__init__(device, desc)
+        self._attr_name = f"{device.appliance.name} {desc}"
+        self._attr_translation_key = None
         self.program_name = program_name
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -193,7 +191,7 @@ class HomeConnectPowerSwitch(HomeConnectEntity, SwitchEntity):
 
     def __init__(self, device):
         """Initialize the entity."""
-        super().__init__(device, "Power")
+        super().__init__(device, BSH_POWER_STATE)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Switch the device on."""
@@ -260,7 +258,7 @@ class HomeConnectChildLockSwitch(HomeConnectEntity, SwitchEntity):
 
     def __init__(self, device) -> None:
         """Initialize the entity."""
-        super().__init__(device, "ChildLock")
+        super().__init__(device, BSH_CHILD_LOCK_STATE)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Switch child lock on."""
