@@ -83,16 +83,17 @@ class SmBaseDataUpdateCoordinator[_DataT](DataUpdateCoordinator[_DataT]):
 
         if info.legacy_api:
             self.legacy_api = info.legacy_api
-            ir.async_create_issue(
-                self.hass,
-                DOMAIN,
-                "unsupported_firmware",
-                is_fixable=False,
-                is_persistent=False,
-                learn_more_url="https://smlight.tech/flasher/#SLZB-06",
-                severity=IssueSeverity.ERROR,
-                translation_key="unsupported_firmware",
-            )
+            if info.legacy_api == 2:
+                ir.async_create_issue(
+                    self.hass,
+                    DOMAIN,
+                    "unsupported_firmware",
+                    is_fixable=False,
+                    is_persistent=False,
+                    learn_more_url="https://smlight.tech/flasher/#SLZB-06",
+                    severity=IssueSeverity.ERROR,
+                    translation_key="unsupported_firmware",
+                )
 
     async def _async_update_data(self) -> _DataT:
         try:
