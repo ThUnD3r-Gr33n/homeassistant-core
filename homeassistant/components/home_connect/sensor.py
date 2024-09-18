@@ -20,6 +20,7 @@ from .api import ConfigEntryAuth, HomeConnectDevice
 from .const import (
     ATTR_DEVICE,
     ATTR_VALUE,
+    BSH_DOOR_STATE,
     BSH_EVENT_PRESENT_STATE_OFF,
     BSH_OPERATION_STATE,
     BSH_OPERATION_STATE_FINISHED,
@@ -32,15 +33,19 @@ from .const import (
     REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
     REFRIGERATION_EVENT_DOOR_ALARM_REFRIGERATOR,
     REFRIGERATION_EVENT_TEMP_ALARM_FREEZER,
+    REFRIGERATION_STATUS_DOOR_CHILLER,
+    REFRIGERATION_STATUS_DOOR_FREEZER,
+    REFRIGERATION_STATUS_DOOR_REFRIGERATOR,
 )
 from .entity import HomeConnectEntity
+from .utils import bsh_key_to_translation_key
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
-class HomeConnectSensorEntityDescription(SensorEntityDescription):
-    """Entity Description class for sensors."""
+class HomeConnectAlarmSensorEntityDescription(SensorEntityDescription):
+    """Entity Description class for alarm sensors."""
 
     device_class: SensorDeviceClass | None = SensorDeviceClass.ENUM
     options: list[str] | None = field(
@@ -50,38 +55,153 @@ class HomeConnectSensorEntityDescription(SensorEntityDescription):
     appliance_types: tuple[str, ...]
 
 
-SENSORS: tuple[HomeConnectSensorEntityDescription, ...] = (
-    HomeConnectSensorEntityDescription(
+SENSORS = (
+    SensorEntityDescription(
+        key=BSH_DOOR_STATE,
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Locked",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(BSH_DOOR_STATE),
+    ),
+    SensorEntityDescription(
+        key="Refrigeration.Common.Status.Door.BottleCooler",
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(
+            "Refrigeration.Common.Status.Door.BottleCooler"
+        ),
+    ),
+    SensorEntityDescription(
+        key=REFRIGERATION_STATUS_DOOR_CHILLER,
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(REFRIGERATION_STATUS_DOOR_CHILLER),
+    ),
+    SensorEntityDescription(
+        key="Refrigeration.Common.Status.Door.Chiller",
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(
+            "Refrigeration.Common.Status.Door.Chiller"
+        ),
+    ),
+    SensorEntityDescription(
+        key="Refrigeration.Common.Status.Door.ChillerLeft",
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(
+            "Refrigeration.Common.Status.Door.ChillerLeft"
+        ),
+    ),
+    SensorEntityDescription(
+        key="Refrigeration.Common.Status.Door.ChillerRight",
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(
+            "Refrigeration.Common.Status.Door.ChillerRight"
+        ),
+    ),
+    SensorEntityDescription(
+        key="Refrigeration.Common.Status.Door.FlexCompartment",
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(
+            "Refrigeration.Common.Status.Door.FlexCompartment"
+        ),
+    ),
+    SensorEntityDescription(
+        key=REFRIGERATION_STATUS_DOOR_FREEZER,
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(REFRIGERATION_STATUS_DOOR_FREEZER),
+    ),
+    SensorEntityDescription(
+        key=REFRIGERATION_STATUS_DOOR_REFRIGERATOR,
+        has_entity_name=True,
+        options=[
+            "Closed",
+            "Open",
+        ],
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(
+            REFRIGERATION_STATUS_DOOR_REFRIGERATOR
+        ),
+    ),
+    SensorEntityDescription(
+        key="Refrigeration.Common.Status.Door.WineCompartment",
+        has_entity_name=True,
+        device_class=SensorDeviceClass.ENUM,
+        translation_key=bsh_key_to_translation_key(
+            "Refrigeration.Common.Status.Door.WineCompartment"
+        ),
+    ),
+)
+
+
+ALARM_SENSORS: tuple[HomeConnectAlarmSensorEntityDescription, ...] = (
+    HomeConnectAlarmSensorEntityDescription(
         key="Door Alarm Freezer",
         translation_key="alarm_sensor_freezer",
         state_key=REFRIGERATION_EVENT_DOOR_ALARM_FREEZER,
         appliance_types=("FridgeFreezer", "Freezer"),
     ),
-    HomeConnectSensorEntityDescription(
+    HomeConnectAlarmSensorEntityDescription(
         key="Door Alarm Refrigerator",
         translation_key="alarm_sensor_fridge",
         state_key=REFRIGERATION_EVENT_DOOR_ALARM_REFRIGERATOR,
         appliance_types=("FridgeFreezer", "Refrigerator"),
     ),
-    HomeConnectSensorEntityDescription(
+    HomeConnectAlarmSensorEntityDescription(
         key="Temperature Alarm Freezer",
         translation_key="alarm_sensor_temp",
         state_key=REFRIGERATION_EVENT_TEMP_ALARM_FREEZER,
         appliance_types=("FridgeFreezer", "Freezer"),
     ),
-    HomeConnectSensorEntityDescription(
+    HomeConnectAlarmSensorEntityDescription(
         key="Bean Container Empty",
         translation_key="alarm_sensor_coffee_bean_container",
         state_key=COFFEE_EVENT_BEAN_CONTAINER_EMPTY,
         appliance_types=("CoffeeMaker",),
     ),
-    HomeConnectSensorEntityDescription(
+    HomeConnectAlarmSensorEntityDescription(
         key="Water Tank Empty",
         translation_key="alarm_sensor_coffee_water_tank",
         state_key=COFFEE_EVENT_WATER_TANK_EMPTY,
         appliance_types=("CoffeeMaker",),
     ),
-    HomeConnectSensorEntityDescription(
+    HomeConnectAlarmSensorEntityDescription(
         key="Drip Tray Full",
         translation_key="alarm_sensor_coffee_drip_tray",
         state_key=COFFEE_EVENT_DRIP_TRAY_FULL,
@@ -107,11 +227,16 @@ async def async_setup_entry(
             device: HomeConnectDevice = device_dict[ATTR_DEVICE]
             # Auto-discover entities
             entities.extend(
+                HomeConnectSensor.from_description(device, description)
+                for description in SENSORS
+                if description.key in device.appliance.status
+            )
+            entities.extend(
                 HomeConnectAlarmSensor(
                     device,
                     entity_description=description,
                 )
-                for description in SENSORS
+                for description in ALARM_SENSORS
                 if device.appliance.type in description.appliance_types
             )
         return entities
@@ -130,6 +255,23 @@ class HomeConnectSensor(HomeConnectEntity, SensorEntity):
         self._attr_native_unit_of_measurement = unit
         self._attr_icon = icon
         self._attr_device_class = device_class
+
+    @classmethod
+    def from_description(
+        cls, device: HomeConnectDevice, description: SensorEntityDescription
+    ):
+        """Initialize the entity from a description."""
+        sensor_entity = cls(
+            device,
+            description.key,
+            description.key,
+            description.unit_of_measurement,
+            description.icon,
+            description.device_class,
+        )
+        sensor_entity.entity_description = description
+        del sensor_entity._attr_name  # noqa: SLF001
+        return sensor_entity
 
     @property
     def available(self) -> bool:
@@ -169,7 +311,14 @@ class HomeConnectSensor(HomeConnectEntity, SensorEntity):
                 self._attr_native_value = None
         else:
             self._attr_native_value = status[self._key].get(ATTR_VALUE)
-            if self._key == BSH_OPERATION_STATE:
+            if self._attr_native_value is not None and (
+                self._key == BSH_OPERATION_STATE
+                or (
+                    hasattr(self, "entity_description")
+                    and self.entity_description
+                    and self.entity_description.device_class == SensorDeviceClass.ENUM
+                )
+            ):
                 # Value comes back as an enum, we only really care about the
                 # last part, so split it off
                 # https://developer.home-connect.com/docs/status/operation_state
@@ -182,12 +331,12 @@ class HomeConnectSensor(HomeConnectEntity, SensorEntity):
 class HomeConnectAlarmSensor(HomeConnectEntity, SensorEntity):
     """Sensor entity setup using SensorEntityDescription."""
 
-    entity_description: HomeConnectSensorEntityDescription
+    entity_description: HomeConnectAlarmSensorEntityDescription
 
     def __init__(
         self,
         device: HomeConnectDevice,
-        entity_description: HomeConnectSensorEntityDescription,
+        entity_description: HomeConnectAlarmSensorEntityDescription,
     ) -> None:
         """Initialize the entity."""
         self.entity_description = entity_description

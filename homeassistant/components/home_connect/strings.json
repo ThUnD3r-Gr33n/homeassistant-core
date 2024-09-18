@@ -21,6 +21,82 @@
       "default": "[%key:common::config_flow::create_entry::authenticated%]"
     }
   },
+  "entity": {
+    "sensor": {
+      "bsh-common-status-door_state": {
+        "name": "Door"
+      },
+      "refrigeration-common-status-door-bottle_cooler": {
+        "name": "Bottle cooler door"
+      },
+      "refrigeration-common-status-door-chiller_common": {
+        "name": "Chiller door"
+      },
+      "refrigeration-common-status-door-chiller": {
+        "name": "[key:component::home_connect::entity::sensor::refrigeration-common-status-door-chiller_common::name%]"
+      },
+      "refrigeration-common-status-door-chiller_left": {
+        "name": "Chiller left door"
+      },
+      "refrigeration-common-status-door-chiller_right": {
+        "name": "Chiller right door"
+      },
+      "refrigeration-common-status-door-flex_compartment": {
+        "name": "Flex compartment door"
+      },
+      "refrigeration-common-status-door-freezer": {
+        "name": "Freezer door"
+      },
+      "refrigeration-common-status-door-refrigerator": {
+        "name": "Refrigerator door"
+      },
+      "refrigeration-common-status-door-refrigerator2": {
+        "name": "Refrigerator door 2"
+      },
+      "refrigeration-common-status-door-refrigerator3": {
+        "name": "Refrigerator door 3"
+      },
+      "refrigeration-common-status-door-wine_compartment": {
+        "name": "Wine compartment door"
+      },
+      "alarm_sensor_fridge": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_freezer": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_temp": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_coffee_bean_container": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_coffee_water_tank": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      },
+      "alarm_sensor_coffee_drip_tray": {
+        "state": {
+          "confirmed": "[%key:component::home_connect::common::confirmed%]",
+          "present": "[%key:component::home_connect::common::present%]"
+        }
+      }
+    }
+  },
   "services": {
     "start_program": {
       "name": "Start program",
@@ -131,46 +207,6 @@
         },
         "key": { "name": "Key", "description": "Key of the setting." },
         "value": { "name": "Value", "description": "Value of the setting." }
-      }
-    }
-  },
-  "entity": {
-    "sensor": {
-      "alarm_sensor_fridge": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_freezer": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_temp": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_bean_container": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_water_tank": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
-      },
-      "alarm_sensor_coffee_drip_tray": {
-        "state": {
-          "confirmed": "[%key:component::home_connect::common::confirmed%]",
-          "present": "[%key:component::home_connect::common::present%]"
-        }
       }
     }
   }
