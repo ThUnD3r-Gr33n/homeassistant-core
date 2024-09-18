@@ -1360,6 +1360,30 @@ class ConfigEntriesFlowManager(data_entry_flow.FlowManager[ConfigFlowResult]):
                 ir.async_delete_issue(self.hass, HOMEASSISTANT_DOMAIN, issue_id)
 
         if result["type"] != data_entry_flow.FlowResultType.CREATE_ENTRY:
+            # If there's an ignored config entry with a matching unique ID,
+            # update the discovery key.
+            if (
+                (discovery_key := flow.context.get("discovery_key"))
+                and (unique_id := flow.unique_id) is not None
+                and (
+                    entry := self.config_entries.async_entry_for_domain_unique_id(
+                        result["handler"], unique_id
+                    )
+                )
+                and entry.source == SOURCE_IGNORE
+                and discovery_key
+                not in (known_discovery_keys := entry.data.get("discovery_keys", []))
+            ):
+                _LOGGER.debug(
+                    "Updating discovery keys for %s entry %s %s -> %s",
+                    entry.domain,
+                    unique_id,
+                    known_discovery_keys,
+                    [*known_discovery_keys, discovery_key],
+                )
+                new_discovery_keys = [*known_discovery_keys, discovery_key][-10:]
+                data = entry.data | {"discovery_keys": new_discovery_keys}
+                self.config_entries.async_update_entry(entry, data=data)
             return result
 
         # Avoid adding a config entry for a integration
@@ -2447,9 +2471,25 @@ class ConfigFlow(ConfigEntryBaseFlow):
         ]
 
     async def async_step_ignore(self, user_input: dict[str, Any]) -> ConfigFlowResult:
-        """Ignore this config flow."""
+        """Ignore this config flow.
+
+        Ignoring a config flow works by creating a config entry with source set to
+        SOURCE_IGNORE.
+
+        There will only be a single active discovery flow per device, also when the
+        integration has multiple discovery sources for the same device. This method
+        is called when the user ignores a discovered device or service, we then store
+        the key for the flow being ignored.
+
+        Once the ignore config entry is created, ConfigEntriesFlowManager.async_finish_flow
+        will make sure the discovery key is kept up to date since it may not be stable
+        unlike the unique id.
+        """
         await self.async_set_unique_id(user_input["unique_id"], raise_on_progress=False)
-        return self.async_create_entry(title=user_input["title"], data={})
+        data = {}
+        if "discovery_key" in user_input:
+            data["discovery_keys"] = [user_input["discovery_key"]]
+        return self.async_create_entry(title=user_input["title"], data=data)
 
     async def async_step_unignore(self, user_input: dict[str, Any]) -> ConfigFlowResult:
         """Rediscover a config entry by it's unique_id."""
