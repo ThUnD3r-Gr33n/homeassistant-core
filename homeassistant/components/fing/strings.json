@@ -1,0 +1,15 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fing Agent Setup",
+        "data": {
+          "name": "Agent name",
+          "agent_ip": "IP",
+          "agent_port": "Port",
+          "agent_key": "API Key"
+        }
+      }
+    }
+  }
+}
