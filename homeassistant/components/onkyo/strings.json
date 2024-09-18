@@ -1,0 +1,125 @@
+{
+  "config": {
+    "flow_title": "{name} ({host})",
+    "step": {
+      "user": {
+        "menu_options": {
+          "eiscp_discovery": "Use Onkyo discovery",
+          "manual": "Manual entry"
+        }
+      },
+      "manual": {
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]"
+        },
+        "description": "Manual device entry."
+      },
+      "configure_receiver": {
+        "description": "Configure {name}",
+        "data": {
+          "volume_resolution": "The value of 'maximum volume' of the receiver",
+          "sources": "List of input sources this receiver supports"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "no_devices_found": "[%key:common::config_flow::abort::no_devices_found%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "max_volume": "Maximum volume limit (%)",
+          "sources": "Aliases for the configured sources",
+          "source.aiplay": "aiplay",
+          "source.am": "am",
+          "source.aux1": "aux1",
+          "source.aux2": "aux2",
+          "source.bd": "bd",
+          "source.bluetooth": "bluetooth",
+          "source.cbl": "cbl",
+          "source.cd": "cd",
+          "source.coaxial": "coaxial",
+          "source.dab": "dab",
+          "source.dlna": "dlna",
+          "source.dvd": "dvd",
+          "source.dvr": "dvr",
+          "source.fm": "fm",
+          "source.game": "game",
+          "source.game/tv": "game/tv",
+          "source.game1": "game1",
+          "source.game2": "game2",
+          "source.hdmi-5": "hdmi-5",
+          "source.hdmi-6": "hdmi-6",
+          "source.hdmi-7": "hdmi-7",
+          "source.internet-radio": "internet-radio",
+          "source.iradio-favorite": "iradio-favorite",
+          "source.line": "line",
+          "source.line2": "line2",
+          "source.multi-ch": "multi-ch",
+          "source.music-server": "music-server",
+          "source.net": "net",
+          "source.network": "network",
+          "source.optical": "optical",
+          "source.p4s": "p4s",
+          "source.pc": "pc",
+          "source.phono": "phono",
+          "source.sat": "sat",
+          "source.sirius": "sirius",
+          "source.stb": "stb",
+          "source.strm-box": "strm-box",
+          "source.tape-1": "tape-1",
+          "source.tape2": "tape2",
+          "source.tuner": "tuner",
+          "source.tv": "tv",
+          "source.tv/cd": "tv/cd",
+          "source.tv/tape": "tv/tape",
+          "source.universal-port": "universal-port",
+          "source.usb": "usb",
+          "source.usb-dac-in": "usb-dac-in",
+          "source.vcr": "vcr",
+          "source.video1": "video1",
+          "source.video2": "video2",
+          "source.video3": "video3",
+          "source.video4": "video4",
+          "source.video5": "video5",
+          "source.video6": "video6",
+          "source.video7": "video7",
+          "source.xm": "xm"
+        }
+      }
+    }
+  },
+  "services": {
+    "onkyo_select_hdmi_output": {
+      "name": "Onkyo Select HDMI output",
+      "description": "Change to the specified HDMI output on the selected receiver.",
+      "fields": {
+        "hdmi_output": {
+          "name": "HDMI Output",
+          "description": "The HDMI output to use."
+        }
+      }
+    }
+  },
+  "issues": {
+    "deprecated_yaml_import_issue_cannot_connect": {
+      "title": "The Onkyo YAML configuration import failed",
+      "description": "Configuring Onkyo using YAML is being removed but there was a connection error importing your YAML configuration.\n\nEnsure the connection to the receiver works and restart Home Assistant to try again or remove the Onkyo YAML configuration from your configuration.yaml file and continue to [set up the integration]({url}) manually."
+    },
+    "deprecated_yaml_import_issue_no_host_defined": {
+      "title": "The Onkyo YAML configuration import failed",
+      "description": "Configuring Onkyo using YAML is being removed but there was no host defined in your existing YAML configuration and could therefore not be imported.\n\nSpecify a receiver and restart Home Assistant to try again or remove the Onkyo YAML configuration from your configuration.yaml file and continue to [set up the integration]({url}) manually."
+    },
+    "deprecated_yaml_import_issue_unknown": {
+      "title": "The Onkyo YAML configuration import failed",
+      "description": "Configuring Onkyo using YAML is being removed but there was an unknown error when trying to import the YAML configuration.\n\nEnsure the imported configuration is correct and remove the Onkyo YAML configuration from your configuration.yaml file and continue to [set up the integration]({url}) manually."
+    }
+  }
+}

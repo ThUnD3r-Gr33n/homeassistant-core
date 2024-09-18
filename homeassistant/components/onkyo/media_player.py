@@ -6,7 +6,6 @@ import asyncio
 import logging
 from typing import Any, Literal
 
-import pyeiscp
 import voluptuous as vol
 
 from homeassistant.components.media_player import (
@@ -17,34 +16,38 @@ from homeassistant.components.media_player import (
     MediaPlayerState,
     MediaType,
 )
-from homeassistant.const import (
-    ATTR_ENTITY_ID,
-    CONF_HOST,
-    CONF_NAME,
-    EVENT_HOMEASSISTANT_STOP,
+from homeassistant.config_entries import SOURCE_IMPORT
+from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME
+from homeassistant.core import (
+    DOMAIN as HOMEASSISTANT_DOMAIN,
+    HomeAssistant,
+    ServiceCall,
+    callback,
 )
-from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
-from homeassistant.helpers import config_validation as cv
+from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.issue_registry import IssueSeverity, async_create_issue
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.util.hass_dict import HassKey
 
-from .receiver import Receiver, ReceiverInfo
+from . import OnkyoConfigEntry
+from .const import (
+    CONF_RECEIVER_MAX_VOLUME,
+    CONF_RECEIVER_MAX_VOLUME_DEFAULT,
+    CONF_SOURCES_DEFAULT,
+    CONF_VOLUME_RESOLUTION,
+    DOMAIN,
+    OPTION_MAX_VOLUME,
+    OPTION_MAX_VOLUME_DEFAULT,
+    OPTION_SOURCES,
+    ZONES,
+)
+from .receiver import Receiver, async_discover
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "onkyo"
-
 DATA_MP_ENTITIES: HassKey[list[dict[str, OnkyoMediaPlayer]]] = HassKey(DOMAIN)
-
-CONF_SOURCES = "sources"
-CONF_MAX_VOLUME = "max_volume"
-CONF_RECEIVER_MAX_VOLUME = "receiver_max_volume"
-
-DEFAULT_NAME = "Onkyo Receiver"
-SUPPORTED_MAX_VOLUME = 100
-DEFAULT_RECEIVER_MAX_VOLUME = 80
-ZONES = {"zone2": "Zone 2", "zone3": "Zone 3", "zone4": "Zone 4"}
 
 SUPPORT_ONKYO_WO_VOLUME = (
     MediaPlayerEntityFeature.TURN_ON
@@ -59,37 +62,7 @@ SUPPORT_ONKYO = (
     | MediaPlayerEntityFeature.VOLUME_STEP
 )
 
-KNOWN_HOSTS: list[str] = []
-
-DEFAULT_SOURCES = {
-    "tv": "TV",
-    "bd": "Bluray",
-    "game": "Game",
-    "aux1": "Aux1",
-    "video1": "Video 1",
-    "video2": "Video 2",
-    "video3": "Video 3",
-    "video4": "Video 4",
-    "video5": "Video 5",
-    "video6": "Video 6",
-    "video7": "Video 7",
-    "fm": "Radio",
-}
 DEFAULT_PLAYABLE_SOURCES = ("fm", "am", "tuner")
-
-PLATFORM_SCHEMA = MEDIA_PLAYER_PLATFORM_SCHEMA.extend(
-    {
-        vol.Optional(CONF_HOST): cv.string,
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional(CONF_MAX_VOLUME, default=SUPPORTED_MAX_VOLUME): vol.All(
-            vol.Coerce(int), vol.Range(min=1, max=100)
-        ),
-        vol.Optional(
-            CONF_RECEIVER_MAX_VOLUME, default=DEFAULT_RECEIVER_MAX_VOLUME
-        ): cv.positive_int,
-        vol.Optional(CONF_SOURCES, default=DEFAULT_SOURCES): {cv.string: cv.string},
-    }
-)
 
 ATTR_HDMI_OUTPUT = "hdmi_output"
 ATTR_PRESET = "preset"
@@ -143,6 +116,22 @@ ONKYO_SELECT_OUTPUT_SCHEMA = vol.Schema(
 )
 SERVICE_SELECT_HDMI_OUTPUT = "onkyo_select_hdmi_output"
 
+PLATFORM_SCHEMA = MEDIA_PLAYER_PLATFORM_SCHEMA.extend(
+    {
+        vol.Optional(CONF_HOST): cv.string,
+        vol.Optional(CONF_NAME): cv.string,
+        vol.Optional(OPTION_MAX_VOLUME, default=OPTION_MAX_VOLUME_DEFAULT): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=100)
+        ),
+        vol.Optional(
+            CONF_RECEIVER_MAX_VOLUME, default=CONF_RECEIVER_MAX_VOLUME_DEFAULT
+        ): cv.positive_int,
+        vol.Optional(OPTION_SOURCES, default=CONF_SOURCES_DEFAULT): {
+            cv.string: cv.string
+        },
+    }
+)
+
 
 async def async_register_services(hass: HomeAssistant) -> None:
     """Register Onkyo services."""
@@ -177,132 +166,139 @@ async def async_setup_platform(
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    """Set up the Onkyo platform."""
-    await async_register_services(hass)
+    """Import config from yaml."""
+    host = config.get(CONF_HOST)
+    results = []
+    if host is not None:
+        _LOGGER.debug("Importing yaml single: %s", host)
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_IMPORT}, data=config
+        )
+        results.append((host, result))
+    else:
+        for info in await async_discover():
+            host = info.host
 
-    receivers: dict[str, Receiver] = {}  # indexed by host
+            # Migrate legacy entities.
+            registry = er.async_get(hass)
+            old_unique_id = f"{info.model_name}_{info.identifier}"
+            new_unique_id = f"{info.identifier}_main"
+            entity_id = registry.async_get_entity_id(
+                "media_player", DOMAIN, old_unique_id
+            )
+            if entity_id is not None:
+                _LOGGER.debug(
+                    "Migrating unique_id from [%s] to [%s]",
+                    old_unique_id,
+                    new_unique_id,
+                )
+                registry.async_update_entity(entity_id, new_unique_id=new_unique_id)
+
+            _LOGGER.debug("Importing yaml discover: %s", info.host)
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_IMPORT},
+                data=config | {CONF_HOST: info.host} | {CONF_NAME: info.model_name},
+            )
+            results.append((host, result))
+
+    _LOGGER.debug("Importing yaml results: %s", results)
+    if results:
+        if all(
+            result.get("type") == FlowResultType.CREATE_ENTRY
+            or result.get("reason") == "already_configured"
+            for _, result in results
+        ):
+            async_create_issue(
+                hass,
+                HOMEASSISTANT_DOMAIN,
+                f"deprecated_yaml_{DOMAIN}",
+                is_fixable=False,
+                issue_domain=DOMAIN,
+                breaks_in_ha_version="2025.2.0",
+                severity=IssueSeverity.WARNING,
+                translation_key="deprecated_yaml",
+                translation_placeholders={
+                    "domain": DOMAIN,
+                    "integration_title": "onkyo",
+                },
+            )
+        else:
+            for host, result in results:
+                if error := result.get("reason"):
+                    async_create_issue(
+                        hass,
+                        DOMAIN,
+                        f"deprecated_yaml_import_issue_{host}_{error}",
+                        breaks_in_ha_version="2025.2.0",
+                        is_fixable=False,
+                        issue_domain=DOMAIN,
+                        severity=IssueSeverity.WARNING,
+                        translation_key=f"deprecated_yaml_import_issue_{error}",
+                        translation_placeholders={"host": f"{host}"},
+                    )
+    else:
+        async_create_issue(
+            hass,
+            DOMAIN,
+            "deprecated_yaml_import_issue_no_discover",
+            breaks_in_ha_version="2025.2.0",
+            is_fixable=False,
+            issue_domain=DOMAIN,
+            severity=IssueSeverity.WARNING,
+            translation_key="deprecated_yaml_import_issue_no_discover",
+        )
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: OnkyoConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up MediaPlayer for config entry."""
+    receiver = entry.runtime_data
     all_entities = hass.data.setdefault(DATA_MP_ENTITIES, [])
 
-    host = config.get(CONF_HOST)
-    name = config.get(CONF_NAME)
-    max_volume = config[CONF_MAX_VOLUME]
-    receiver_max_volume = config[CONF_RECEIVER_MAX_VOLUME]
-    sources = config[CONF_SOURCES]
+    entities: dict[str, OnkyoMediaPlayer] = {}
+    all_entities.append(entities)
 
-    async def async_setup_receiver(
-        info: ReceiverInfo, discovered: bool, name: str | None
-    ) -> None:
-        entities: dict[str, OnkyoMediaPlayer] = {}
-        all_entities.append(entities)
+    volume_resolution = entry.data[CONF_VOLUME_RESOLUTION]
+    max_volume = entry.options[OPTION_MAX_VOLUME]
+    sources = entry.options[OPTION_SOURCES]
 
-        @callback
-        def async_onkyo_update_callback(
-            message: tuple[str, str, Any], origin: str
-        ) -> None:
-            """Process new message from receiver."""
-            receiver = receivers[origin]
-            _LOGGER.debug(
-                "Received update callback from %s: %s", receiver.name, message
-            )
-
-            zone, _, value = message
-            entity = entities.get(zone)
-            if entity is not None:
-                if entity.enabled:
-                    entity.process_update(message)
-            elif zone in ZONES and value != "N/A":
-                # When we receive the status for a zone, and the value is not "N/A",
-                # then zone is available on the receiver, so we create the entity for it.
-                _LOGGER.debug("Discovered %s on %s", ZONES[zone], receiver.name)
-                zone_entity = OnkyoMediaPlayer(
-                    receiver, sources, zone, max_volume, receiver_max_volume
-                )
-                entities[zone] = zone_entity
-                async_add_entities([zone_entity])
-
-        @callback
-        def async_onkyo_connect_callback(origin: str) -> None:
-            """Receiver (re)connected."""
-            receiver = receivers[origin]
-            _LOGGER.debug(
-                "Receiver (re)connected: %s (%s)", receiver.name, receiver.conn.host
-            )
-
+    def connect_callback(receiver: Receiver) -> None:
+        if not receiver.first_connect:
             for entity in entities.values():
-                entity.backfill_state()
+                if entity.enabled:
+                    entity.backfill_state()
 
-        _LOGGER.debug("Creating receiver: %s (%s)", info.model_name, info.host)
-        connection = await pyeiscp.Connection.create(
-            host=info.host,
-            port=info.port,
-            update_callback=async_onkyo_update_callback,
-            connect_callback=async_onkyo_connect_callback,
-        )
+    def update_callback(receiver: Receiver, message: tuple[str, str, Any]) -> None:
+        zone, _, value = message
+        entity = entities.get(zone)
+        if entity is not None:
+            if entity.enabled:
+                entity.process_update(message)
+        elif zone in ZONES and value != "N/A":
+            # When we receive the status for a zone, and the value is not "N/A",
+            # then zone is available on the receiver, so we create the entity for it.
+            _LOGGER.debug(
+                "Discovered %s on %s (%s)",
+                ZONES[zone],
+                receiver.model_name,
+                receiver.host,
+            )
+            zone_entity = OnkyoMediaPlayer(
+                receiver,
+                zone,
+                volume_resolution=volume_resolution,
+                max_volume=max_volume,
+                sources=sources,
+            )
+            entities[zone] = zone_entity
+            async_add_entities([zone_entity])
 
-        receiver = Receiver(
-            conn=connection,
-            model_name=info.model_name,
-            identifier=info.identifier,
-            name=name or info.model_name,
-            discovered=discovered,
-        )
-
-        receivers[connection.host] = receiver
-
-        # Discover what zones are available for the receiver by querying the power.
-        # If we get a response for the specific zone, it means it is available.
-        for zone in ZONES:
-            receiver.conn.query_property(zone, "power")
-
-        # Add the main zone to entities, since it is always active.
-        _LOGGER.debug("Adding Main Zone on %s", receiver.name)
-        main_entity = OnkyoMediaPlayer(
-            receiver, sources, "main", max_volume, receiver_max_volume
-        )
-        entities["main"] = main_entity
-        async_add_entities([main_entity])
-
-    if host is not None:
-        if host in KNOWN_HOSTS:
-            return
-
-        _LOGGER.debug("Manually creating receiver: %s (%s)", name, host)
-
-        @callback
-        async def async_onkyo_interview_callback(conn: pyeiscp.Connection) -> None:
-            """Receiver interviewed, connection not yet active."""
-            info = ReceiverInfo(conn.host, conn.port, conn.name, conn.identifier)
-            _LOGGER.debug("Receiver interviewed: %s (%s)", info.model_name, info.host)
-            if info.host not in KNOWN_HOSTS:
-                KNOWN_HOSTS.append(info.host)
-                await async_setup_receiver(info, False, name)
-
-        await pyeiscp.Connection.discover(
-            host=host,
-            discovery_callback=async_onkyo_interview_callback,
-        )
-    else:
-        _LOGGER.debug("Discovering receivers")
-
-        @callback
-        async def async_onkyo_discovery_callback(conn: pyeiscp.Connection) -> None:
-            """Receiver discovered, connection not yet active."""
-            info = ReceiverInfo(conn.host, conn.port, conn.name, conn.identifier)
-            _LOGGER.debug("Receiver discovered: %s (%s)", info.model_name, info.host)
-            if info.host not in KNOWN_HOSTS:
-                KNOWN_HOSTS.append(info.host)
-                await async_setup_receiver(info, True, None)
-
-        await pyeiscp.Connection.discover(
-            discovery_callback=async_onkyo_discovery_callback,
-        )
-
-    @callback
-    def close_receiver(_event: Event) -> None:
-        for receiver in receivers.values():
-            receiver.conn.close()
-
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, close_receiver)
+    receiver.callbacks.connect.append(connect_callback)
+    receiver.callbacks.update.append(update_callback)
 
 
 class OnkyoMediaPlayer(MediaPlayerEntity):
@@ -318,21 +314,18 @@ class OnkyoMediaPlayer(MediaPlayerEntity):
     def __init__(
         self,
         receiver: Receiver,
-        sources: dict[str, str],
         zone: str,
-        max_volume: int,
+        *,
         volume_resolution: int,
+        max_volume: int,
+        sources: dict[str, str],
     ) -> None:
         """Initialize the Onkyo Receiver."""
         self._receiver = receiver
-        name = receiver.name
+        name = receiver.model_name
         identifier = receiver.identifier
         self._attr_name = f"{name}{' ' + ZONES[zone] if zone != 'main' else ''}"
-        if receiver.discovered and zone == "main":
-            # keep legacy unique_id
-            self._attr_unique_id = f"{name}_{identifier}"
-        else:
-            self._attr_unique_id = f"{identifier}_{zone}"
+        self._attr_unique_id = f"{identifier}_{zone}"
 
         self._zone = zone
         self._source_mapping = sources
