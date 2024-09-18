@@ -384,6 +384,11 @@ class UpdateEntity(
         """
         raise NotImplementedError
 
+    def version_is_newer(self, latest_version: str, installed_version: str) -> bool:
+        """Return True if installed version is newer than available."""
+        # We don't inline the `_version_is_newer` function because of caching
+        return _version_is_newer(latest_version, installed_version)
+
     @property
     @final
     def state(self) -> str | None:
@@ -399,7 +404,7 @@ class UpdateEntity(
             return STATE_OFF
 
         try:
-            newer = _version_is_newer(latest_version, installed_version)
+            newer = self.version_is_newer(latest_version, installed_version)
         except AwesomeVersionCompareException:
             # Can't compare versions, already tried exact match
             return STATE_ON
