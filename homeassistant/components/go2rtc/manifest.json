@@ -1,0 +1,9 @@
+{
+  "domain": "go2rtc",
+  "name": "go2rtc",
+  "codeowners": ["@home-assistant/core"],
+  "config_flow": true,
+  "dependencies": ["camera", "http", "lovelace", "websocket_api"],
+  "documentation": "https://www.home-assistant.io/integrations/go2rtc",
+  "iot_class": "local_polling"
+}
