@@ -30,10 +30,19 @@ import voluptuous as vol
 from yarl import URL
 
 from homeassistant.components.network import async_get_source_ip
-from homeassistant.const import EVENT_HOMEASSISTANT_STOP, SERVER_PORT
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.const import (
+    EVENT_HOMEASSISTANT_START,
+    EVENT_HOMEASSISTANT_STOP,
+    SERVER_PORT,
+)
+from homeassistant.core import (
+    DOMAIN as HOMEASSISTANT_DOMAIN,
+    Event,
+    HomeAssistant,
+    callback,
+)
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import frame, storage
+from homeassistant.helpers import frame, issue_registry as ir, storage
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.http import (
     KEY_ALLOW_CONFIGURED_CORS,
@@ -43,7 +52,11 @@ from homeassistant.helpers.http import (
     current_request,
 )
 from homeassistant.helpers.importlib import async_import_module
-from homeassistant.helpers.network import NoURLAvailableError, get_url
+from homeassistant.helpers.network import (
+    NoURLAvailableError,
+    get_url,
+    is_cloud_connection,
+)
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import bind_hass
 from homeassistant.setup import (
@@ -263,6 +276,24 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.config.api = ApiConfig(
         local_ip, host, server_port, ssl_certificate is not None
     )
+
+    @callback
+    def _async_check_ssl_issue(_: Event) -> None:
+        if (
+            (hass.config.external_url is None or hass.config.internal_url is None)
+            and ssl_certificate is not None
+            and not is_cloud_connection(hass)
+        ):
+            ir.async_create_issue(
+                hass,
+                HOMEASSISTANT_DOMAIN,
+                "ssl_configured_without_configured_urls",
+                is_fixable=False,
+                severity=ir.IssueSeverity.ERROR,
+                translation_key="ssl_configured_without_configured_urls",
+            )
+
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, _async_check_ssl_issue)
 
     return True
 
