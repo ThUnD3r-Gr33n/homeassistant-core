@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import abc
 import asyncio
 from dataclasses import asdict, dataclass
 import hashlib
@@ -28,19 +29,62 @@ from .const import DOMAIN, EXCLUDE_FROM_BACKUP, LOGGER
 BUF_SIZE = 2**20 * 4  # 4MB
 
 
-@dataclass(slots=True)
-class Backup:
-    """Backup class."""
+class BackupSyncAgent(abc.ABC):
+    """Define the format that backup sync agents can have."""
 
-    slug: str
-    name: str
+    def __init__(self, name: str) -> None:
+        """Initialize the backup sync agent."""
+        self.name = name
+
+    @abc.abstractmethod
+    async def async_download_backup(
+        self,
+        *,
+        id: str,
+        path: Path,
+        **kwargs: Any,
+    ) -> None:
+        """Download a backup file."""
+
+    @abc.abstractmethod
+    async def async_upload_backup(self, *, backup: Backup, **kwargs: Any) -> None:
+        """Upload a backup file."""
+
+    @abc.abstractmethod
+    async def async_list_backups(self, **kwargs: Any) -> list[SyncedBackup]:
+        """List backups."""
+
+
+@dataclass(slots=True)
+class BaseBackup:
+    """Base backup class."""
+
     date: str
-    path: Path
+    slug: str
     size: float
+    name: str
 
     def as_dict(self) -> dict:
         """Return a dict representation of this backup."""
-        return {**asdict(self), "path": self.path.as_posix()}
+        return asdict(self)
+
+
+@dataclass(slots=True)
+class Backup(BaseBackup):
+    """Backup class."""
+
+    path: Path
+
+    def as_dict(self) -> dict:
+        """Return a dict representation of this backup."""
+        return {**super().as_dict(), "path": self.path.as_posix()}
+
+
+@dataclass(slots=True)
+class SyncedBackup(BaseBackup):
+    """Synced backup class."""
+
+    id: str
 
 
 class BackupPlatformProtocol(Protocol):
@@ -53,6 +97,18 @@ class BackupPlatformProtocol(Protocol):
         """Perform operations after a backup finishes."""
 
 
+class BackupPlatformAgentProtocol(Protocol):
+    """Define the format that backup platforms can have."""
+
+    async def async_get_backup_sync_agents(
+        self,
+        *,
+        hass: HomeAssistant,
+        **kwargs: Any,
+    ) -> list[BackupSyncAgent]:
+        """Register the backup sync agent."""
+
+
 class BackupManager:
     """Backup manager for the Backup integration."""
 
@@ -63,11 +119,13 @@ class BackupManager:
         self.backing_up = False
         self.backups: dict[str, Backup] = {}
         self.platforms: dict[str, BackupPlatformProtocol] = {}
+        self.sync_agents: dict[str, BackupSyncAgent] = {}
+        self.syncing = False
         self.loaded_backups = False
         self.loaded_platforms = False
 
     @callback
-    def _add_platform(
+    def _add_platform_pre_post_handlers(
         self,
         hass: HomeAssistant,
         integration_domain: str,
@@ -77,12 +135,24 @@ class BackupManager:
         if not hasattr(platform, "async_pre_backup") or not hasattr(
             platform, "async_post_backup"
         ):
-            LOGGER.warning(
-                "%s does not implement required functions for the backup platform",
-                integration_domain,
-            )
             return
+
         self.platforms[integration_domain] = platform
+
+    async def _async_add_platform_agents(
+        self,
+        hass: HomeAssistant,
+        integration_domain: str,
+        platform: BackupPlatformAgentProtocol,
+    ) -> None:
+        """Add a platform to the backup manager."""
+        if not hasattr(platform, "async_get_backup_sync_agents"):
+            return
+
+        agents = await platform.async_get_backup_sync_agents(hass=hass)
+        self.sync_agents.update(
+            {f"{integration_domain}.{agent.name}": agent for agent in agents}
+        )
 
     async def pre_backup_actions(self) -> None:
         """Perform pre backup actions."""
@@ -116,19 +186,51 @@ class BackupManager:
             if isinstance(result, Exception):
                 raise result
 
+    async def sync_backup(self, backup: Backup) -> None:
+        """Sync a backup."""
+        await self.load_platforms()
+
+        if not self.sync_agents:
+            return
+
+        self.syncing = True
+        sync_backup_results = await asyncio.gather(
+            *(
+                agent.async_upload_backup(backup=backup)
+                for agent in self.sync_agents.values()
+            ),
+            return_exceptions=True,
+        )
+        for result in sync_backup_results:
+            if isinstance(result, Exception):
+                LOGGER.error("Error during backup sync - %s", result)
+        self.syncing = False
+
     async def load_backups(self) -> None:
         """Load data of stored backup files."""
         backups = await self.hass.async_add_executor_job(self._read_backups)
-        LOGGER.debug("Loaded %s backups", len(backups))
+        LOGGER.debug("Loaded %s local backups", len(backups))
         self.backups = backups
         self.loaded_backups = True
 
     async def load_platforms(self) -> None:
         """Load backup platforms."""
+        if self.loaded_platforms:
+            return
         await integration_platform.async_process_integration_platforms(
-            self.hass, DOMAIN, self._add_platform, wait_for_platforms=True
+            self.hass,
+            DOMAIN,
+            self._add_platform_pre_post_handlers,
+            wait_for_platforms=True,
+        )
+        await integration_platform.async_process_integration_platforms(
+            self.hass,
+            DOMAIN,
+            self._async_add_platform_agents,
+            wait_for_platforms=True,
         )
         LOGGER.debug("Loaded %s platforms", len(self.platforms))
+        LOGGER.debug("Loaded %s agents", len(self.sync_agents))
         self.loaded_platforms = True
 
     def _read_backups(self) -> dict[str, Backup]:
