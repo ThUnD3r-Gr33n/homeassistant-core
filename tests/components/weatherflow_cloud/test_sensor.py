@@ -27,7 +27,8 @@ async def test_all_entities(
     snapshot: SnapshotAssertion,
     mock_config_entry: MockConfigEntry,
     entity_registry: er.EntityRegistry,
-    mock_api: AsyncMock,
+    mock_rest_api: AsyncMock,
+    mock_websocket_api: AsyncMock,
 ) -> None:
     """Test all entities."""
     with patch(
@@ -42,7 +43,8 @@ async def test_all_entities_with_lightning_error(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     entity_registry: er.EntityRegistry,
-    mock_api: AsyncMock,
+    mock_rest_api: AsyncMock,
+    mock_websocket_api: AsyncMock,
     freezer: FrozenDateTimeFactory,
 ) -> None:
     """Test all entities."""
@@ -62,9 +64,9 @@ async def test_all_entities_with_lightning_error(
         )
 
         # Update the data in our API
-        all_data = await mock_api.get_all_data()
+        all_data = await mock_rest_api.get_all_data()
         all_data[24432].observation = get_observation_response_data
-        mock_api.get_all_data.return_value = all_data
+        mock_rest_api.get_all_data.return_value = all_data
 
         # Move time forward
         freezer.tick(timedelta(minutes=5))
